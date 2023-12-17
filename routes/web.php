@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\HomeController;
+use App\Models\DefaultModel;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +16,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+Route::get('/', [HomeController::class, 'index']);
+
+Route::get('/table/{table}', function ($table) {
+    $columns = DB::select('SHOW COLUMNS FROM ' . $table);
+
+    foreach ($columns as $column) {
+        // The column name will be a property of the stdClass object
+        $db = "Field";
+        echo $column->$db . "\n";
+    }
 });
