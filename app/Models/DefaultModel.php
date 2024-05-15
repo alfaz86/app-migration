@@ -10,7 +10,6 @@ class DefaultModel extends Model
     use HasFactory;
 
     const LIST_OF_TABLES = [
-        'users',
         'password_reset_tokens',
         'failed_jobs',
         'migrations',

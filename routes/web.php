@@ -1,7 +1,8 @@
 <?php
 
+use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\HomeController;
-use App\Models\DefaultModel;
+use App\Http\Controllers\MigrationController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,28 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [HomeController::class, 'index']);
+Route::prefix('/migration')->group(function () {
+    Route::get('/', [MigrationController::class, 'index']);
+    
+});
+
+Route::prefix('/database')->group(function () {
+    Route::get('/get-data', [DatabaseController::class, 'getData'])
+        ->name('database.getData');
+        
+});
+
+Route::prefix('/shortkey')->group(function () {
+    Route::get('/artisan-config-cache', function () {
+        Artisan::call('config:cache');
+        return 'Artisan config:cache executed.';
+    })->name('artisan.config.cache');
+    Route::get('/artisan-config-clear', function () {
+        Artisan::call('config:clear');
+        return 'Artisan config:clear executed.';
+    })->name('artisan.config.clear');
+        
+});
 
 Route::get('/table/{table}', function ($table) {
     $columns = DB::select('SHOW COLUMNS FROM ' . $table);
