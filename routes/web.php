@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Main Features Router
 Route::get('/', [HomeController::class, 'index']);
 Route::prefix('/migration')->group(function () {
     Route::get('/', [MigrationController::class, 'index']);
@@ -29,6 +30,12 @@ Route::prefix('/database')->group(function () {
         
 });
 
+Route::middleware(['check.api.type'])->group(function () {
+
+    // Tambahkan route lainnya yang memerlukan middleware ini
+});
+
+// Minor Features Router
 Route::prefix('/shortkey')->group(function () {
     Route::get('/artisan-config-cache', function () {
         Artisan::call('config:cache');

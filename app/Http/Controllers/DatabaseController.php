@@ -14,7 +14,7 @@ class DatabaseController extends Controller
 
     public function __construct(DatabaseRequest $request)
     {
-        Artisan::call('config:cache');
+        // Artisan::call('config:cache');
         $this->request = $request;
         $this->setDatabaseConfig();
     }
@@ -38,6 +38,15 @@ class DatabaseController extends Controller
             'strict' => true,
             'engine' => null,
         ]);
+
+        // // Set konfigurasi database secara dinamis
+        // Config::set("database.connections.dynamic_mysql", $config);
+
+        // // Reload konfigurasi untuk memastikan koneksi diterapkan
+        // Artisan::call('config:cache');
+
+        // // Mengembalikan response dengan konfigurasi
+        // return response()->json(Config::get("database.connections.dynamic_mysql"));
     }
 
     public function getData()
@@ -45,6 +54,7 @@ class DatabaseController extends Controller
         try {
             // Mendapatkan data dari database dinamis
             $data = DB::connection('dynamic_mysql')->table('users')->get();
+            // 
             return response()->json($data);
         } catch (\Exception $e) {
             return response()->json([

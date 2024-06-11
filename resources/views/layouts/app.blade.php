@@ -292,6 +292,11 @@
                 <!-- End Content -->
                 <!-- *************************************************************** -->
             </div>
+            <div class="submit-container">
+                <div class="area-btn-submit w-100 bg-white p-4 text-right shadow-lg">
+                    <button class="btn btn-primary btn-submit" onclick="submitForm()">Create Migration</button>
+                </div>
+            </div>
             <!-- ============================================================== -->
             <!-- End Container fluid  -->
             <!-- ============================================================== -->

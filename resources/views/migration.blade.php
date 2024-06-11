@@ -4,33 +4,47 @@
 
 @section('styles')
 <style>
-.area-display-response,
-.area-display-error-message {
-    max-height: 300px;
-    overflow-y: auto;
-    background-color: aliceblue;
-    padding: 1em;
-}
+    .area-display-response,
+    .area-display-error-message {
+        max-height: 300px;
+        overflow-y: auto;
+        background-color: aliceblue;
+        padding: 1em;
+    }
 
+    .loading-animation {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
 
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
 
-.loading-animation {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
+        100% {
+            transform: rotate(360deg);
+        }
+    }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
+    .custom-control-input:checked~.custom-control-label::before {
+        background-color: #7c8798;
+        border-color: #7c8798;
+        color: white;
+    }
+
+    #form-automation {
+        display: none;
+    }
+
 </style>
 @endsection
 
@@ -41,8 +55,8 @@
 @section('content')
 <div class="card">
     <div class="card-body">
-        <div class="form-group">
-            <label for="url">Input API URL</label>
+        <div class="form-group" id="form-api-url">
+            <h3><b>API Entpoint</b></h3>
             <div class="input-group">
                 <div class="input-group-prepend">
                     <div class="dropdown">
@@ -69,18 +83,56 @@
         <hr>
 
         <div class="form-group" id="form-destination-database">
-            <label >Destination Database</label>
+            <h3><b>Destination Database</b></h3>
             <input type="text" name="driver" id="driver" class="form-control my-2" placeholder="driver" value="mysql">
             <input type="text" name="host" id="host" class="form-control my-2" placeholder="host" value="127.0.0.1">
             <input type="text" name="port" id="port" class="form-control my-2" placeholder="port" value="3306">
             <input type="text" name="database" id="database" class="form-control my-2" placeholder="database" value="app_migration_2">
             <input type="text" name="username" id="username" class="form-control my-2" placeholder="username" value="root">
             <input type="text" name="password" id="password" class="form-control my-2" placeholder="password" value="">
-            <button class="btn btn-primary mt-3" onclick="getData()">Check</button>
+            <button class="btn btn-secondary mt-3" onclick="getData()">Check</button>
+            <button class="btn btn-primary mt-3" onclick="#">Set</button>
 
             <div class="area-display-error-message my-2" style="display: none; position: relative;">
                 <button id="close-button" class="btn btn-secondary btn-sm" style="position: absolute; top: 0; right: 0;">Close</button>
                 <pre><code id="display-error-message"></code></pre>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="form-group">
+            <h3><b>Automation</b></h3>
+            <div class="btn-group" data-toggle="buttons">
+                <label class="btn btn-success">
+                    <div class="custom-control custom-radio">
+                        <input type="radio" id="automation-on" name="automation" class="custom-control-input" onchange="toggleAutomation()">
+                        <label class="custom-control-label" for="automation-on">On</label>
+                    </div>
+                </label>
+                <label class="btn btn-danger">
+                    <div class="custom-control custom-radio">
+                        <input type="radio" id="automation-off" name="automation" class="custom-control-input" onchange="toggleAutomation()" checked>
+                        <label class="custom-control-label" for="automation-off">Off</label>
+                    </div>
+                </label>
+            </div>
+
+            <br>
+
+            <div  id="form-automation">
+                <label for="time">Time</label>
+                <input type="time" name="time" id="time" class="form-control mb-1" placeholder="Input Time">
+    
+                <label for="duration">Duration</label>
+                <select class="form-control" name="duration" id="duration">
+                    <option value="minute">Menit</option>
+                    <option value="hour">Jam</option>
+                    <option value="day">Hari</option>
+                    <option value="week">Minggu</option>
+                    <option value="month">Bulan</option>
+                    <option value="year">Tahun</option>
+                </select>
             </div>
         </div>
     </div>
@@ -89,82 +141,94 @@
 
 @section('scripts')
 <script>
-var exitButton = document.getElementById('close-button');
+    var exitButton = document.getElementById('close-button');
 
-exitButton.addEventListener('click', function() {
-    var areaDisplayErrorMessage = document.querySelector('.area-display-error-message');
-    areaDisplayErrorMessage.style.display = 'none';
-});
-
-function fetchData() {
-    var url = document.getElementById('url').value;
-    var displayResponse = document.getElementById('display-response');
-    displayResponse.innerHTML = '';
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
-            displayResponse.innerHTML = JSON.stringify(data, null, 2);
-        })
-        .catch(error => {
-            console.log(error)
-            alert('kesalahan pada url yang diinputkan')
-        });
-}
-
-function getData() {
-    var driver = document.getElementById('driver').value;
-    var host = document.getElementById('host').value;
-    var port = document.getElementById('port').value;
-    var database = document.getElementById('database').value;
-    var username = document.getElementById('username').value;
-    var password = document.getElementById('password').value;
-
-    var loadingAnimation = document.createElement('div');
-    loadingAnimation.classList.add('loading-animation');
-    document.getElementById('form-destination-database').appendChild(loadingAnimation);
-
-    // Disable check button
-    var checkButton = document.querySelector('#form-destination-database button');
-    checkButton.disabled = true;
-
-    $.ajax({
-        url: "{{ route('database.getData') }}",
-        type: "GET",
-        data: {
-            _token: '{{ csrf_token() }}',
-            driver: driver,
-            host: host,
-            port: port,
-            database: database,
-            username: username,
-            password: password,
-        },
-        success: function(response) {
-            console.log(response);
-            // trigger click close-button
-            exitButton.click();
-
-            alert('Data berhasil diambil');
-        },
-        error: function(xhr) {
-            console.log(xhr);
-            // Tampilkan pesan kesalahan
-            var areaDisplayErrorMessage = document.querySelector('.area-display-error-message');
-            var displayErrorMessage = document.getElementById('display-error-message');
-            areaDisplayErrorMessage.style.display = 'block';
-            displayErrorMessage.innerHTML = JSON.stringify(xhr.responseJSON, null, 2);
-
-            alert('Data gagal diambil');
-        },
-        complete: function() {
-            // Remove loading animation
-            loadingAnimation.remove();
-            
-            // Enable check button
-            checkButton.disabled = false;
-        }
+    exitButton.addEventListener('click', function() {
+        var areaDisplayErrorMessage = document.querySelector('.area-display-error-message');
+        areaDisplayErrorMessage.style.display = 'none';
     });
-}
+
+    function fetchData() {
+        var url = document.getElementById('url').value;
+        var displayResponse = document.getElementById('display-response');
+        displayResponse.innerHTML = '';
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                displayResponse.innerHTML = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.log(error)
+                alert('kesalahan pada url yang diinputkan')
+            });
+    }
+
+    function getData() {
+        var driver = document.getElementById('driver').value;
+        var host = document.getElementById('host').value;
+        var port = document.getElementById('port').value;
+        var database = document.getElementById('database').value;
+        var username = document.getElementById('username').value;
+        var password = document.getElementById('password').value;
+
+        var loadingAnimation = document.createElement('div');
+        loadingAnimation.classList.add('loading-animation');
+        document.getElementById('form-destination-database').appendChild(loadingAnimation);
+
+        // Disable check button
+        var checkButton = document.querySelector('#form-destination-database button');
+        checkButton.disabled = true;
+
+        $.ajax({
+            url: "{{ route('database.getData') }}"
+            , type: "GET"
+            , data: {
+                _token: '{{ csrf_token() }}'
+                , driver: driver
+                , host: host
+                , port: port
+                , database: database
+                , username: username
+                , password: password
+            , }
+            , success: function(response) {
+                console.log(response);
+                // trigger click close-button
+                exitButton.click();
+
+                alert('Data berhasil diambil');
+            }
+            , error: function(xhr) {
+                console.log(xhr);
+                // Tampilkan pesan kesalahan
+                var areaDisplayErrorMessage = document.querySelector('.area-display-error-message');
+                var displayErrorMessage = document.getElementById('display-error-message');
+                areaDisplayErrorMessage.style.display = 'block';
+                displayErrorMessage.innerHTML = JSON.stringify(xhr.responseJSON, null, 2);
+
+                alert('Data gagal diambil');
+            }
+            , complete: function() {
+                // Remove loading animation
+                loadingAnimation.remove();
+
+                // Enable check button
+                checkButton.disabled = false;
+            }
+        });
+    }
+
+    // function toggle on off automation checkbox to show form-automation
+    function toggleAutomation() {
+        var automationOn = document.getElementById('automation-on');
+        var formAutomation = document.getElementById('form-automation');
+
+        if (automationOn.checked) {
+            formAutomation.style.display = 'block';
+        } else {
+            formAutomation.style.display = 'none';
+        }
+    }
 </script>
 @endsection
