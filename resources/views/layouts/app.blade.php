@@ -199,8 +199,8 @@
                         <!-- ============================================================== -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="javascript:void(0)" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <img src="{{asset('template/assets/images/users/profile-pic.jpg')}}" alt="user" class="rounded-circle" width="40">
-                                <span class="ml-2 d-none d-lg-inline-block"><span>Hello,</span> <span class="text-dark">Jason Doe</span> <i data-feather="chevron-down" class="svg-icon"></i></span>
+                                <img src="{{asset('template/assets/images/users/d3.jpg')}}" alt="user" class="rounded-circle" width="40">
+                                <span class="ml-2 d-none d-lg-inline-block"><span>Hello,</span> <span class="text-dark">User</span> <i data-feather="chevron-down" class="svg-icon"></i></span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-right user-dd animated flipInY">
                                 <a class="dropdown-item" href="javascript:void(0)"><i data-feather="user" class="svg-icon mr-2 ml-1"></i>
@@ -292,11 +292,6 @@
                 <!-- End Content -->
                 <!-- *************************************************************** -->
             </div>
-            <div class="submit-container">
-                <div class="area-btn-submit w-100 bg-white p-4 text-right shadow-lg">
-                    <button class="btn btn-primary btn-submit" onclick="submitForm()">Create Migration</button>
-                </div>
-            </div>
             <!-- ============================================================== -->
             <!-- End Container fluid  -->
             <!-- ============================================================== -->
@@ -310,6 +305,7 @@
             <!-- End footer -->
             <!-- ============================================================== -->
         </div>
+        @yield('footer')
         <!-- ============================================================== -->
         <!-- End Page wrapper  -->
         <!-- ============================================================== -->

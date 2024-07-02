@@ -5,9 +5,9 @@
         <li class="nav-small-cap"><span class="hide-menu">Applications</span></li>
 
         <li class="sidebar-item"> <a class="sidebar-link" href="/migration" aria-expanded="false"><i data-feather="repeat" class="feather-icon"></i><span class="hide-menu">Migration</span></a></li>
-        <li class="sidebar-item"> <a class="sidebar-link" href="#" aria-expanded="false"><i data-feather="tag" class="feather-icon"></i><span class="hide-menu">Another Menu</span></a>
-        <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="#" aria-expanded="false"><i data-feather="message-square" class="feather-icon"></i><span class="hide-menu">Another Menu</span></a></li>
-        <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="#" aria-expanded="false"><i data-feather="calendar" class="feather-icon"></i><span class="hide-menu">Another Menu</span></a></li>
+        <li class="sidebar-item"> <a class="sidebar-link" href="/migration/list" aria-expanded="false"><i data-feather="sidebar" class="feather-icon"></i><span class="hide-menu">Migration List</span></a>
+        {{-- <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="#" aria-expanded="false"><i data-feather="message-square" class="feather-icon"></i><span class="hide-menu">Another Menu</span></a></li>
+        <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="#" aria-expanded="false"><i data-feather="calendar" class="feather-icon"></i><span class="hide-menu">Another Menu</span></a></li> --}}
 
         {{-- <li class="list-divider"></li>
         <li class="nav-small-cap"><span class="hide-menu">Components</span></li>

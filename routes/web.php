@@ -21,10 +21,17 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index']);
 Route::prefix('/migration')->group(function () {
     Route::get('/', [MigrationController::class, 'index']);
-    
+    Route::post('/set', [MigrationController::class, 'setMigration'])->name('migration.set');
+    Route::post('/create', [MigrationController::class, 'createMigration'])->name('migration.create');
+    Route::get('/process', [MigrationController::class, 'processMigration'])->name('migration.process');
+
+    // migration list
+    Route::get('/list', [MigrationController::class, 'listMigration'])->name('migration.list');
 });
 
 Route::prefix('/database')->group(function () {
+    Route::get('/check-connection', [DatabaseController::class, 'checkConnection'])
+        ->name('database.checkConnection');
     Route::get('/get-data', [DatabaseController::class, 'getData'])
         ->name('database.getData');
         

@@ -13,9 +13,9 @@ foreach ($tables as $table) {
     // Check if the property exists
     if (property_exists($table, $db)) {
         // Check if the table name is in the list of tables to skip
-        if (in_array($table->$db, \App\Models\DefaultModel::LIST_OF_TABLES)) {
-            continue;
-        }
+        // if (in_array($table->$db, \App\Models\DefaultModel::LIST_OF_TABLES)) {
+        //     continue;
+        // }
         echo "<a href='/" . $table->$db . "'>" . $table->$db . "</a><br>";
     } else {
         // Handle the case where the property does not exist

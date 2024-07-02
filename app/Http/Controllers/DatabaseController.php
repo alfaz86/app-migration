@@ -24,19 +24,23 @@ class DatabaseController extends Controller
         // Ambil input dari request
         $config = $this->request;
 
+        // set db connection
+        if ($config['driver'] == 'pgsql') {
+            $dynamic_db = 'dynamic_pgsql';
+        } elseif ($config['driver'] == 'mongodb') {
+            $dynamic_db = 'dynamic_mongodb';
+        } else {
+            $dynamic_db = 'dynamic_mysql';
+        }
+
         // Set konfigurasi database secara dinamis
-        Config::set('database.connections.dynamic_mysql', [
+        Config::set("database.connections.$dynamic_db", [
             'driver' => $config['driver'],
             'host' => $config['host'],
             'port' => $config['port'],
             'database' => $config['database'],
             'username' => $config['username'],
-            'password' => $config['password'],
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix' => '',
-            'strict' => true,
-            'engine' => null,
+            'password' => $config['password']
         ]);
 
         // // Set konfigurasi database secara dinamis
@@ -49,12 +53,36 @@ class DatabaseController extends Controller
         // return response()->json(Config::get("database.connections.dynamic_mysql"));
     }
 
+    public function checkConnection(Request $request)
+    {
+        try {
+            // Mencoba koneksi ke database dinamis
+            // set db connection
+            if ($request['driver'] == 'pgsql') {
+                $dynamic_db = 'dynamic_pgsql';
+            } elseif ($request['driver'] == 'mongodb') {
+                $dynamic_db = 'dynamic_mongodb';
+            } else {
+                $dynamic_db = 'dynamic_mysql';
+            }
+            DB::connection($dynamic_db)->getPdo();
+            return response()->json([
+                'message' => 'Connection to database is successful.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Could not connect to database.',
+                'message' => $e->getMessage()
+            ], 400);
+        }
+    }
+
     public function getData()
     {
         try {
             // Mendapatkan data dari database dinamis
             $data = DB::connection('dynamic_mysql')->table('users')->get();
-            // 
+            // Menampilkan data dari database dinamis
             return response()->json($data);
         } catch (\Exception $e) {
             return response()->json([
