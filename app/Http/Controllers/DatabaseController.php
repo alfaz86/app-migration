@@ -25,13 +25,7 @@ class DatabaseController extends Controller
         $config = $this->request;
 
         // set db connection
-        if ($config['driver'] == 'pgsql') {
-            $dynamic_db = 'dynamic_pgsql';
-        } elseif ($config['driver'] == 'mongodb') {
-            $dynamic_db = 'dynamic_mongodb';
-        } else {
-            $dynamic_db = 'dynamic_mysql';
-        }
+        $dynamic_db = 'dynamic_' . $config['driver'];
 
         // Set konfigurasi database secara dinamis
         Config::set("database.connections.$dynamic_db", [
@@ -40,7 +34,10 @@ class DatabaseController extends Controller
             'port' => $config['port'],
             'database' => $config['database'],
             'username' => $config['username'],
-            'password' => $config['password']
+            'password' => $config['password'],
+            'options'  => [
+                'database' => $config['authSourceDatabase'] ?? '',
+            ],
         ]);
 
         // // Set konfigurasi database secara dinamis
@@ -58,16 +55,37 @@ class DatabaseController extends Controller
         try {
             // Mencoba koneksi ke database dinamis
             // set db connection
-            if ($request['driver'] == 'pgsql') {
-                $dynamic_db = 'dynamic_pgsql';
-            } elseif ($request['driver'] == 'mongodb') {
-                $dynamic_db = 'dynamic_mongodb';
+            $dynamic_db = 'dynamic_' . $request['driver'];
+            $connection = DB::connection($dynamic_db);
+            $collections = [];
+
+            if ($request['driver'] === 'mysql') {
+                // Untuk MySQL
+                $tables = $connection->select('SHOW TABLES');
+                foreach ($tables as $table) {
+                    $collections[] = array_values((array)$table)[0];
+                }
+            } elseif ($request['driver'] === 'pgsql') {
+                // Untuk PostgreSQL
+                $tables = $connection->select("SELECT tablename FROM pg_tables WHERE schemaname='public'");
+                foreach ($tables as $table) {
+                    $collections[] = $table->tablename;
+                }
+            } elseif ($request['driver'] === 'mongodb') {
+                $list = $connection->listCollections();
+                foreach ($list as $collection) {
+                    $collections[] = $collection->getName();
+                }
             } else {
-                $dynamic_db = 'dynamic_mysql';
+                return response()->json([
+                    'message' => 'Unsupported database driver.',
+                    'data' => []
+                ], 400); // Bad Request
             }
-            DB::connection($dynamic_db)->getPdo();
+
             return response()->json([
-                'message' => 'Connection to database is successful.'
+                'message' => 'Connection to database is successful.',
+                'data' => $collections
             ]);
         } catch (\Exception $e) {
             return response()->json([

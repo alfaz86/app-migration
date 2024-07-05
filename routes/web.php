@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\APIController;
 use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MigrationController;
@@ -21,9 +22,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index']);
 Route::prefix('/migration')->group(function () {
     Route::get('/', [MigrationController::class, 'index']);
-    Route::post('/set', [MigrationController::class, 'setMigration'])->name('migration.set');
     Route::post('/create', [MigrationController::class, 'createMigration'])->name('migration.create');
-    Route::get('/process', [MigrationController::class, 'processMigration'])->name('migration.process');
+    Route::post('/process', [MigrationController::class, 'callMigrationProcess'])->name('migration.process');
 
     // migration list
     Route::get('/list', [MigrationController::class, 'listMigration'])->name('migration.list');
@@ -38,8 +38,10 @@ Route::prefix('/database')->group(function () {
 });
 
 Route::middleware(['check.api.type'])->group(function () {
-
-    // Tambahkan route lainnya yang memerlukan middleware ini
+    Route::get('/api/checking', [APIController::class, 'checkingAPI'])
+        ->name('api.checking');
+    Route::get('/api/collection-key', [APIController::class, 'collectionKeyOfObjectData'])
+        ->name('api.collectionKey');
 });
 
 // Minor Features Router

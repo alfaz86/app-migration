@@ -62,16 +62,31 @@
                             <select class="form-control" aria-label="Default select example" id="http-method" name="http_method">
                                 <option value="GET">GET</option>
                                 <option value="POST">POST</option>
-                                {{-- <option value="PUT">PUT</option>
+                                <!-- <option value="PUT">PUT</option>
                                 <option value="PATCH">PATCH</option>
-                                <option value="DELETE">DELETE</option> --}}
+                                <option value="DELETE">DELETE</option> -->
                             </select>
                         </div>
                     </div>
                     <input type="text" name="url" id="url" class="form-control" placeholder="Input URL"
                     value="https://jsonplaceholder.typicode.com/posts">
+                    <div class="input-group-prepend">
+                        <button type="button" class="btn btn-primary" onclick="fetchData()">Kirim</button>
+                    </div>
                 </div>
-                <button type="button" class="btn btn-primary mt-3" onclick="fetchData()">Fetch</button>
+                <div class="form-group mt-2">
+                    <label for="auth-type">Authentication Type</label>
+                    <select class="form-control" id="auth-type" name="auth_type">
+                        <option value="none">None</option>
+                        <option value="basic">Basic Auth</option>
+                        <option value="bearer">Bearer Token</option>
+                        <option value="oauth2">OAuth 2.0</option>
+                        <option value="apikey">API Key</option>
+                    </select>
+                </div>
+                <div class="form-group" id="auth-params">
+                    <!-- Fields for authentication parameters will be dynamically added here -->
+                </div>
             </div>
             <div class="form-group">
                 <label for="response">Response</label>
@@ -109,7 +124,8 @@
                 <input type="text" name="port" id="port" class="form-control my-2" placeholder="port" value="3306">
                 <input type="text" name="database" id="database" class="form-control my-2" placeholder="database" value="destination_db">
                 <input type="text" name="username" id="username" class="form-control my-2" placeholder="username" value="root">
-                <input type="text" name="password" id="password" class="form-control my-2" placeholder="password" value="">
+                <input type="password" name="password" id="password" class="form-control my-2" placeholder="password" value="">
+                <input type="text" name="authSourceDatabase" id="authSourceDatabase" class="form-control my-2" placeholder="authSourceDatabase" value="" style="display: none">
                 <button type="button" class="btn btn-secondary mt-3" onclick="checkConnection()">Check</button>
                 {{-- <button type="button" class="btn btn-primary mt-3" onclick="setMigration()">Set</button> --}}
 
@@ -121,8 +137,12 @@
 
             <hr>
 
+            <div class="form-group" id="table-content">
+                <h3><b>Table</b></h3>
+                <input type="text" name="table" id="table" class="form-control" placeholder="table">
+            </div>
             {{-- create input area with class schema --}}
-            <div class="form-group">
+            <div class="form-group" id="schema-content">
                 <h3><b>Schema</b></h3>
                 <textarea class="form-control" name="schema" id="schema" cols="30" rows="10">
 CREATE TABLE IF NOT EXISTS posts (
@@ -131,8 +151,12 @@ CREATE TABLE IF NOT EXISTS posts (
     title VARCHAR(255),
     body TEXT,
     PRIMARY KEY (userId, id)
-);
-                </textarea>
+);</textarea>
+            </div>
+            <div class="form-group" id="collections-content" style="display: none">
+                <h3><b>Collections</b></h3>
+                <input type="text" name="collections" id="collections" class="form-control" placeholder="collections">
+            </div>
 
             <hr>
 
@@ -185,6 +209,33 @@ CREATE TABLE IF NOT EXISTS posts (
 
 @section('scripts')
 <script>
+    document.getElementById('auth-type').addEventListener('change', function() {
+        var authType = this.value;
+        var authParamsDiv = document.getElementById('auth-params');
+        authParamsDiv.innerHTML = '';
+
+        if (authType === 'basic') {
+            authParamsDiv.innerHTML = `
+                <div class="form-group">
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Username">
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Password">
+                </div>`;
+        } else if (authType === 'bearer') {
+            authParamsDiv.innerHTML = `
+                <div class="form-group">
+                    <input type="text" id="token" name="token" class="form-control" placeholder="Token">
+                </div>`;
+        } else if (authType === 'apikey') {
+            authParamsDiv.innerHTML = `
+                <div class="form-group">
+                    <input type="text" id="apikey" name="apikey" class="form-control" placeholder="API Key">
+                    <input type="text" id="apivalue" name="apivalue" class="form-control" placeholder="API Value">
+                </div>`;
+        }
+        // Add more fields for OAuth 2.0 if needed
+    });
+</script>
+<script>
     var exitButton = document.getElementById('close-button');
 
     exitButton.addEventListener('click', function() {
@@ -192,44 +243,110 @@ CREATE TABLE IF NOT EXISTS posts (
         areaDisplayErrorMessage.style.display = 'none';
     });
 
+    function setFieldData(object_data)
+    {
+        $.ajax({
+            url: "{{ route('api.collectionKey') }}",
+            type: "GET",
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            data: {
+                object_data
+            },
+            success: function(response) {
+                console.log(response.data);
+                // Handle the success response
+            },
+            error: function(xhr) {
+                // Handle the error response
+            }
+        });
+    }
+
+    function setResultData(jsonData) {
+        let keysWithArray = [];
+        if (!Array.isArray(jsonData)) {
+            function checkKeys(obj) {
+                for (let key in obj) {
+                    if (Array.isArray(obj[key])) {
+                        keysWithArray.push(key);
+                    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                        checkKeys(obj[key]);
+                    }
+                }
+            }
+    
+            checkKeys(jsonData);
+        } else {
+            keysWithArray.push('current');
+        }
+        var resultData = document.getElementById('result-data');
+        // remove select input value
+        for (var i = resultData.options.length - 1; i >= 0; i--) {
+            resultData.remove(i);
+        }
+        keysWithArray.forEach(field => {
+            var option = document.createElement('option');
+            option.value = field;
+            option.text = field == 'current' ? 'Current Response' : field;
+            resultData.appendChild(option);
+        })
+
+        return keysWithArray;
+    }
+
     function fetchData() {
         var url = document.getElementById('url').value;
         var httpMethod = document.getElementById('http-method').value;
+        var authType = document.getElementById('auth-type').value;
         var displayResponse = document.getElementById('display-response');
         displayResponse.innerHTML = '';
 
-        fetch(url, {
-                method: httpMethod,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                displayResponse.innerHTML = JSON.stringify(data, null, 2);
-                if (!Array.isArray(data)) {
-                    // insert the field into select result_data 
-                    // fisrt reset the field without current value dan set other field
-                    var resultData = document.getElementById('result-data');
-                    // remove select input value
-                    for (var i = resultData.options.length - 1; i >= 0; i--) {
-                        if (resultData.options[i].value !== 'current') {
-                            resultData.remove(i);
-                        }
-                    }
-                    Object.keys(data).forEach(field => {
-                        var option = document.createElement('option');
-                        option.value = field;
-                        option.text = field;
-                        resultData.appendChild(option);
-                        
-                    })
-                }
-            })
-            .catch(error => {
-                console.log(error)
-                alert('kesalahan pada url yang diinputkan')
-            });
+        var authData = {};
+
+        if (authType === 'basic') {
+            authData = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+        } else if (authType === 'bearer') {
+            authData = {
+                token: document.getElementById('token').value
+            };
+        } else if (authType === 'apikey') {
+            authData = {
+                key: document.getElementById('apikey').value,
+                value: document.getElementById('apivalue').value
+            };
+        }
+
+        $.ajax({
+            url: "{{ route('api.checking') }}",
+            type: "GET",
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            data: {
+                url: url,
+                http_method: httpMethod,
+                auth_type: authType,
+                auth_data: authData
+            },
+            success: function(response) {
+                displayResponse.innerHTML = JSON.stringify(response.data, null, 2);
+                var result_data = setResultData(response.data)
+                var object_data = result_data[0] == 'current' ? response.data[0] : response.data[result_data[0][0]];
+                console.log(object_data);
+                // setFieldData(object_data)
+            },
+            error: function(xhr) {
+                alert('kesalahan pada url yang diinputkan');
+                displayResponse.innerHTML = JSON.stringify(xhr.responseJSON.data, null, 2);
+            }
+        });
     }
 
     function checkConnection() {
@@ -239,6 +356,7 @@ CREATE TABLE IF NOT EXISTS posts (
         var database = document.getElementById('database').value;
         var username = document.getElementById('username').value;
         var password = document.getElementById('password').value;
+        var authSourceDatabase = document.getElementById('authSourceDatabase').value;
 
         var loadingAnimation = document.createElement('div');
         loadingAnimation.classList.add('loading-animation');
@@ -253,20 +371,19 @@ CREATE TABLE IF NOT EXISTS posts (
             type: "GET",
             data: {
                 _token: '{{ csrf_token() }}',
-                driver: driver,
-                host: host,
-                port: port,
-                database: database,
-                username: username,
-                password: password,
+                driver,
+                host,
+                port,
+                database,
+                username,
+                password,
+                authSourceDatabase
             },
             success: function(response) {
-                console.log(response);
                 exitButton.click();
                 alert('Database berhasil terkoneksi');
             },
             error: function(xhr) {
-                console.log(xhr);
                 var areaDisplayErrorMessage = document.querySelector('.area-display-error-message');
                 var displayErrorMessage = document.getElementById('display-error-message');
                 areaDisplayErrorMessage.style.display = 'block';
@@ -280,23 +397,19 @@ CREATE TABLE IF NOT EXISTS posts (
         });
     }
 
-    function setMigration() {
-        var form = document.getElementById('migration-form');
-        var formData = new FormData(form);
-
+    function processMigration(id) {
         $.ajax({
-            url: "{{ route('migration.set') }}",
+            url: "{{ route('migration.process') }}",
             type: "POST",
-            data: formData,
-            processData: false,
-            contentType: false,
+            data: {
+                _token: '{{ csrf_token() }}',
+                id
+            },
             success: function(response) {
-                console.log(response);
-                alert('Pengaturan migrasi berhasil disimpan');
+                console.log('Migrasi berhasil dijalankan');
             },
             error: function(xhr) {
-                console.log(xhr);
-                alert('Pengaturan migrasi gagal disimpan');
+                console.log('Migrasi gagal dijalankan');
             }
         });
     }
@@ -327,6 +440,9 @@ CREATE TABLE IF NOT EXISTS posts (
         var database = document.getElementById('database');
         var username = document.getElementById('username');
         var password = document.getElementById('password');
+        var authSourceDatabase = document.getElementById('authSourceDatabase');
+        var schema = document.getElementById('schema-content');
+        var collections = document.getElementById('collections-content');
 
         if (driver === 'mysql') {
             host.value = '127.0.0.1';
@@ -334,24 +450,57 @@ CREATE TABLE IF NOT EXISTS posts (
             database.value = 'destination_db';
             username.value = 'root';
             password.value = '';
+            authSourceDatabase.style.display = 'none';
+            authSourceDatabase.value = '';
+            schema.style.display = 'block';
+            collections.style.display = 'none';
         } else if (driver === 'pgsql') {
             host.value = '127.0.0.1';
             port.value = '5432';
             database.value = 'destination_db';
             username.value = 'postgres';
             password.value = '';
+            authSourceDatabase.style.display = 'none';
+            authSourceDatabase.value = '';
+            schema.style.display = 'block';
+            collections.style.display = 'none';
         } else if (driver === 'mongodb') {
             host.value = '127.0.0.1';
             port.value = '27017';
             database.value = 'destination_db';
             username.value = 'admin';
             password.value = '';
+            authSourceDatabase.style.display = 'block';
+            authSourceDatabase.value = 'authSourceDatabase';
+            schema.style.display = 'none';
+            collections.style.display = 'block';
         }
     }
 
     function submitForm() {
         var form = document.getElementById('migration-form');
         var formData = new FormData(form);
+        var authType = document.getElementById('auth-type').value;
+        var authData = {};
+    
+        if (authType === 'basic') {
+            authData = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+        } else if (authType === 'bearer') {
+            authData = {
+                token: document.getElementById('token').value
+            };
+        } else if (authType === 'apikey') {
+            authData = {
+                key: document.getElementById('apikey').value,
+                value: document.getElementById('apivalue').value
+            };
+        }
+        
+        // Menambahkan auth_data ke FormData
+        formData.append('auth_data', JSON.stringify(authData));
 
         $.ajax({
             url: "{{ route('migration.create') }}",
@@ -360,11 +509,10 @@ CREATE TABLE IF NOT EXISTS posts (
             processData: false,
             contentType: false,
             success: function(response) {
-                console.log(response);
+                processMigration(response.id);
                 alert('Migrasi berhasil dibuat');
             },
             error: function(xhr) {
-                console.log(xhr);
                 alert('Migrasi gagal dibuat');
             }
         });

@@ -2,17 +2,13 @@
 
 namespace App\Jobs;
 
-use App\Http\Controllers\DatabaseController;
-use App\Http\Requests\DatabaseRequest;
 use App\Models\MigrationProcess;
 use GuzzleHttp\Exception\InvalidArgumentException;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -21,11 +17,13 @@ class ProcessMigration implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(
-        protected MigrationProcess $migration
-    )
+    protected $migration;
+    protected $driver;
+
+    public function __construct(MigrationProcess $migration, $driver)
     {
         $this->migration = $migration;
+        $this->driver = $driver;
     }
 
     public function handle(): void
@@ -35,77 +33,87 @@ class ProcessMigration implements ShouldQueue
         $url = $this->migration['url'];
         $httpMethod = $this->migration['http_method'];
         $resultData = $this->migration['result_data'];
+        $authType = $this->migration['auth_type'];
+        $authData = json_decode($this->migration['auth_data'], true);
 
-        switch ($httpMethod) {
-            case 'GET':
-                $response = Http::get($url);
+        // Mengatur klien HTTP dengan opsi autentikasi
+        $client = Http::withOptions(['verify' => false]);
+
+        switch ($authType) {
+            case 'basic':
+                $client = $client->withBasicAuth($authData['username'], $authData['password']);
                 break;
-            case 'POST':
-                $response = Http::post($url, []);
+            case 'bearer':
+                $client = $client->withToken($authData['token']);
                 break;
-            case 'PUT':
-                $response = Http::put($url, []);
+            case 'apikey':
+                $client = $client->withHeaders([$authData['key'] => $authData['value']]);
                 break;
-            case `DELETE`:
-                $response = Http::delete($url);
+            case 'oauth2':
+                // Handle OAuth 2.0 specific logic here
                 break;
+            case 'none':
             default:
-                throw new InvalidArgumentException("Invalid HTTP method: $httpMethod");
+                // No additional authentication
+                break;
         }
 
+        $response = $client->send($httpMethod, $url);
+
         if ($response->successful()) {
-            $databaseRequest = new DatabaseRequest(json_decode($this->migration['setup_connection'], true));
-
-            // set db connection
-            $dynamic_db = 'dynamic_' . $databaseRequest['driver'];
-
-            // Set konfigurasi database secara dinamis
-            Config::set("database.connections.$dynamic_db", [
-                'driver' => $databaseRequest['driver'],
-                'host' => $databaseRequest['host'],
-                'port' => $databaseRequest['port'],
-                'database' => $databaseRequest['database'],
-                'username' => $databaseRequest['username'],
-                'password' => $databaseRequest['password']
-            ]);
-
+            $dynamic_db = 'dynamic_' . $this->driver;
             $connection = DB::connection($dynamic_db);
-            
-            // Test the connection
-            try {
-                $connection->getPdo();
-            } catch (\Exception $e) {
-                // Handle connection errors
-                Log::error('Failed to connect to database: ' . $e->getMessage());
-                return;
+
+            // Buat tabel jika belum ada
+            if ($this->driver == 'mongodb') {
+                $connection->createCollection($this->migration['collections']);
+            } else {
+                $connection->statement($this->migration['schema']);
             }
 
             $data = $response->json();
             $data = $resultData === 'current' ? $data : $data[$resultData];
+            $count = 0;
 
             foreach ($data as $item) {
                 $record = [];
                 foreach ($item as $key => $value) {
-                    $record[$key] = $value;
+                    if (in_array($key, ['attributes', 'links'])) {
+                        $record[$key] = json_encode($value);
+                    } else {
+                        $record[$key] = $value;
+                    }
                 }
 
                 // Check driver and insert data accordingly
-                if ($databaseRequest['driver'] == 'mongodb') {
-                    DB::connection($dynamic_db)->collection('posts')->updateOrInsert([
-                        'userId' => $record['userId'],
-                        'id' => $record['id']
-                    ], $record);
+                if ($this->driver == 'mongodb') {
+                    DB::transaction(function () use ($connection, $record, &$count) {
+                        $success = $connection->collection($this->migration['collections'])->insert($record);
+                    
+                        if ($success) {
+                            $count += 1;
+                        }
+                    });
                 } else {
-                    DB::connection($dynamic_db)->table('posts')->updateOrInsert([
-                        'userId' => $record['userId'],
-                        'id' => $record['id']
-                    ], $record);
+                    DB::transaction(function () use ($connection, $record, &$count) {
+                        $success = $connection->table($this->migration['table'])->updateOrInsert([
+                            'id' => $record['id']
+                        ], $record);
+
+                        if ($success) {
+                            $count += 1;
+                        }
+                    });
                 }
             }
-        }
 
-        $endTime = microtime(true);
-        $executionTime = $endTime - $startTime;
-        Log::info('Waktu eksekusi migrasi: ' . $executionTime . ' detik');
+            $endTime = microtime(true);
+            $executionTime = $endTime - $startTime;
+            Log::info('Migrasi ke databse: ' . $this->driver . PHP_EOL .
+                'Waktu eksekusi migrasi: ' . $executionTime . ' detik' . PHP_EOL .
+                'Jumlah data yang berhasil diinput: ' . $count);
+        } else {
+            Log::error('Error: ' . $response->status() . ' ' . $response->body());
+        }
     }
 }

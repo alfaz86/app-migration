@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ProcessMigration;
 use App\Models\MigrationProcess;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MigrationController extends Controller
 {
@@ -18,15 +19,6 @@ class MigrationController extends Controller
     {
         $migrations = MigrationProcess::paginate(25);
         return view('migration-list', compact('migrations'));
-    }
-
-    public function setMigration(Request $request)
-    {
-        // Validate and save migration settings
-        $settings = $request->all();
-        // Save settings to database or session
-        // Return response
-        return response()->json(['message' => 'Settings saved successfully']);
     }
 
     public function createMigration(Request $request)
@@ -45,6 +37,9 @@ class MigrationController extends Controller
                 'database' => $settings['database'],
                 'username' => $settings['username'],
                 'password' => $settings['password'],
+                'options'  => [
+                    'database' => $settings['authSourceDatabase'] ?? '',
+                ],
             ];
 
             DB::transaction(function () use ($settings, $setup_connection, &$migration) {
@@ -56,17 +51,41 @@ class MigrationController extends Controller
                 $migration->database = $settings['database'];
                 $migration->setup_connection = json_encode($setup_connection);
                 $migration->schema = $settings['schema'];
+                $migration->table = $settings['table'];
+                $migration->collections = $settings['collections'];
                 $migration->scheduler = $settings['scheduler'];
                 $migration->time = $settings['time'];
                 $migration->duration = $settings['duration'];
                 $migration->status = 'progress';
+                $migration->auth_type = $settings['auth_type'];
+                $migration->auth_data = $settings['auth_data'];
                 $migration->save();
             });
         } catch (\Throwable $th) {
             throw $th;
         }
 
-        return response()->json(['message' => 'Migration initiated successfully']);
+        return response()->json([
+            'message' => 'Migration initiated successfully',
+            'id' => $migration->id
+        ]);
     }
 
+    public function updateProcess(MigrationProcess $migrationProcess, string $status)
+    {
+        // Update migration process
+        $migrationProcess->status = $status;
+        $migrationProcess->save();
+        // Return response
+        return response()->json(['message' => 'Migration process updated successfully']);
+    }
+
+    public function callMigrationProcess(Request $request)
+    {
+        try {
+            Artisan::call('app:migrate-process', ['migrationProcessID' => $request->id]);
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+        }
+    }
 }
