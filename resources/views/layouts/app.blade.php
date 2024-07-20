@@ -10,13 +10,14 @@
     <meta name="author" content="">
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="{{asset('template/assets/images/favicon.png')}}">
-    <title>{{ env('APP_NAME') }}</title>
+    <title>{{ env('APP_NAME', 'app-migration') }}</title>
     <!-- Custom CSS -->
     <link href="{{asset('template/assets/extra-libs/c3/c3.min.css')}}" rel="stylesheet">
     <link href="{{asset('template/assets/libs/chartist/dist/chartist.min.css')}}" rel="stylesheet">
     <link href="{{asset('template/assets/extra-libs/jvector/jquery-jvectormap-2.0.2.css')}}" rel="stylesheet" />
     <!-- Custom CSS -->
     <link href="{{asset('template/dist/css/style.min.css')}}" rel="stylesheet">
+    @yield('styles')
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -66,7 +67,7 @@
                                 <img src="{{asset('template/assets/images/logo-text.png')}}" alt="homepage" class="dark-logo" />
                                 <!-- Light Logo text -->
                                 <img src="{{asset('template/assets/images/logo-light-text.png')}}" class="light-logo" alt="homepage" /> --}}
-                                {{ env('APP_NAME') }}
+                                {{ env('APP_NAME', 'app-migration') }}
                             </span>
                         </a>
                     </div>
@@ -198,8 +199,8 @@
                         <!-- ============================================================== -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="javascript:void(0)" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <img src="{{asset('template/assets/images/users/profile-pic.jpg')}}" alt="user" class="rounded-circle" width="40">
-                                <span class="ml-2 d-none d-lg-inline-block"><span>Hello,</span> <span class="text-dark">Jason Doe</span> <i data-feather="chevron-down" class="svg-icon"></i></span>
+                                <img src="{{asset('template/assets/images/users/d3.jpg')}}" alt="user" class="rounded-circle" width="40">
+                                <span class="ml-2 d-none d-lg-inline-block"><span>Hello,</span> <span class="text-dark">User</span> <i data-feather="chevron-down" class="svg-icon"></i></span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-right user-dd animated flipInY">
                                 <a class="dropdown-item" href="javascript:void(0)"><i data-feather="user" class="svg-icon mr-2 ml-1"></i>
@@ -260,6 +261,7 @@
                                 <ol class="breadcrumb m-0 p-0">
                                     <li class="breadcrumb-item"><a href="/">Dashboard</a>
                                     </li>
+                                    @yield('breadcrumbs')
                                 </ol>
                             </nav>
                         </div>
@@ -303,6 +305,7 @@
             <!-- End footer -->
             <!-- ============================================================== -->
         </div>
+        @yield('footer')
         <!-- ============================================================== -->
         <!-- End Page wrapper  -->
         <!-- ============================================================== -->
@@ -325,6 +328,7 @@
     <script src="{{asset('template/dist/js/sidebarmenu.js')}}"></script>
     <!--Custom JavaScript -->
     <script src="{{asset('template/dist/js/custom.min.js')}}"></script>
+    @yield('scripts')
     <!--This page JavaScript -->
     {{-- <script src="{{asset('template/assets/extra-libs/c3/d3.min.js')}}"></script>
     <script src="{{asset('template/assets/extra-libs/c3/c3.min.js')}}"></script>
@@ -333,6 +337,40 @@
     <script src="{{asset('template/assets/extra-libs/jvector/jquery-jvectormap-2.0.2.min.js')}}"></script>
     <script src="{{asset('template/assets/extra-libs/jvector/jquery-jvectormap-world-mill-en.js')}}"></script>
     <script src="{{asset('template/dist/js/pages/dashboards/dashboard1.min.js')}}"></script> --}}
+    <script>
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.altKey && event.key === 'c') {
+                runArtisanConfigCache();
+            }
+        });
+
+        function runArtisanConfigCache() {
+            $.ajax({
+                url: "{{ route('artisan.config.cache') }}",
+                type: "GET",
+                success: function(response) {
+                    console.log(response);
+                    runArtisanConfigClear();
+                },
+                error: function(xhr) {
+                    console.log(xhr);
+                }
+            });
+        }
+
+        function runArtisanConfigClear() {
+            $.ajax({
+                url: "{{ route('artisan.config.clear') }}",
+                type: "GET",
+                success: function(response) {
+                    console.log(response);
+                },
+                error: function(xhr) {
+                    console.log(xhr);
+                }
+            });
+        }
+    </script>
 </body>
 
 </html>
