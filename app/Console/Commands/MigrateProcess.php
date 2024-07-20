@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Http\Controllers\MigrationController;
 use App\Jobs\ProcessMigration;
 use App\Models\MigrationProcess;
+use App\Services\DatabaseService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
 use PDO;
@@ -19,6 +20,9 @@ class MigrateProcess extends Command
         try {
             $id = (int) $this->argument('migrationProcessID');
             $migration = MigrationProcess::find($id);
+            $loop = false;
+            $totalLoop = 10;
+            $total_request = $loop ? $totalLoop : 1;
 
             if (!$migration) {
                 $this->error("Migration process with ID $id not found.");
@@ -27,31 +31,26 @@ class MigrateProcess extends Command
 
             $databaseRequest = json_decode($migration['setup_connection'], true);
             $driver = $databaseRequest['driver'];
-            $dynamic_db = 'dynamic_' . $driver;
-
-            // Set konfigurasi database secara dinamis
-            Config::set("database.connections.$dynamic_db", [
-                'driver' => $databaseRequest['driver'],
-                'host' => $databaseRequest['host'],
-                'port' => $databaseRequest['port'],
-                'database' => $databaseRequest['database'],
-                'username' => $databaseRequest['username'],
-                'password' => $databaseRequest['password'],
-                'options' => [
-                    'database' => $databaseRequest['database']
-                ],
-            ]);
-
-            // Memastikan konfigurasi terbaru diterapkan
-            // Artisan::call('config:cache');
-            
-            if ($driver === 'pgsql') {
-                $pdo = new PDO("pgsql:host=$databaseRequest[host];dbname=$databaseRequest[database];port=$databaseRequest[port]", "$databaseRequest[username]", "$databaseRequest[password]");
-                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            if ($driver === 'mongodb') {
+                $databaseRequest['authSourceDatabase'] = $databaseRequest['options']['database'] ?? '';
             }
+            $databaseService = new DatabaseService();
+            $databaseService->setDatabaseConfig($databaseRequest);
+            
+            // if ($driver === 'pgsql') {
+            //     $pdo = new PDO("pgsql:host=$databaseRequest[host];dbname=$databaseRequest[database];port=$databaseRequest[port]", "$databaseRequest[username]", "$databaseRequest[password]");
+            //     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            // }
 
             // Dispatch job dengan konfigurasi yang sudah diterapkan
-            dispatch(new ProcessMigration($migration, $driver));
+            for ($key = 1; $key <= $total_request; $key++) {
+                $paging = '';
+                if ($loop) {
+                    $paging = '?page=' . $key;
+                }
+                $url = $migration->url . $paging;
+                dispatch(new ProcessMigration($migration, $driver, $url));
+            }
 
             // update status of migration process
             $migrationContoller = new MigrationController();

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\MigrationProcess;
+use App\Models\RelationalModel;
+use App\Services\SchemaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -10,22 +12,32 @@ use Illuminate\Support\Facades\Log;
 
 class MigrationController extends Controller
 {
+    protected $schemaService;
+
+    public function __construct()
+    {
+        $this->schemaService = new SchemaService();
+    }
+    
     public function index()
     {
-        return view('migration');
+        $relationalDataTypes = RelationalModel::DATA_TYPES;
+        return view('migration', compact('relationalDataTypes'));
     }
 
     public function listMigration()
     {
-        $migrations = MigrationProcess::paginate(25);
+        $migrations = MigrationProcess::orderBy('created_at', 'desc')->paginate(25);
         return view('migration-list', compact('migrations'));
     }
 
     public function createMigration(Request $request)
     {
         $settings = $request->all();
+        $settings['schema'] = $this->schemaService->generateSchema($request->all());
+        $settings['schema_mapping'] = $this->schemaService->generateSchemaMapping($request->all());
         // save settings to database or session
-        // dd($settings);
+        // dd($settings['schema_mapping']);
         try {
             // create setup json for variable $setup_connection
             // data from reqeust: driver, host, port, database, username, password
@@ -50,13 +62,14 @@ class MigrationController extends Controller
                 $migration->result_data = $settings['result_data'];
                 $migration->database = $settings['database'];
                 $migration->setup_connection = json_encode($setup_connection);
-                $migration->schema = $settings['schema'];
+                $migration->schema = $settings['schema'] ?? null;
+                $migration->schema_mapping = $settings['schema_mapping'] ?? null;
                 $migration->table = $settings['table'];
                 $migration->collections = $settings['collections'];
                 $migration->scheduler = $settings['scheduler'];
                 $migration->time = $settings['time'];
                 $migration->duration = $settings['duration'];
-                $migration->status = 'progress';
+                $migration->status = $settings['scheduler'] == 'off' ? 'progress' : 'waiting for shcedule';
                 $migration->auth_type = $settings['auth_type'];
                 $migration->auth_data = $settings['auth_data'];
                 $migration->save();
@@ -83,7 +96,10 @@ class MigrationController extends Controller
     public function callMigrationProcess(Request $request)
     {
         try {
-            Artisan::call('app:migrate-process', ['migrationProcessID' => $request->id]);
+            $migrationProcess = MigrationProcess::find($request->id);
+            if ($migrationProcess->scheduler === 'off') {
+                Artisan::call('app:migrate-process', ['migrationProcessID' => $request->id]);
+            }
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }

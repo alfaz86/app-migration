@@ -14,14 +14,8 @@
                 <thead>
                     <tr>
                         <th>URL</th>
-                        <th>HTTP Method</th>
-                        <th>Result Data</th>
                         <th>Database</th>
-                        <th>Setup Connection</th>
-                        <th>Schema</th>
                         <th>Scheduler</th>
-                        <th>Time</th>
-                        <th>Duration</th>
                         <th>Status</th>
                         <th>Created At</th>
                     </tr>
@@ -30,15 +24,26 @@
                     @foreach ($migrations as $migration)
                     <tr>
                         <td>{{ $migration->url }}</td>
-                        <td>{{ $migration->http_method }}</td>
-                        <td>{{ $migration->result_data }}</td>
-                        <td>{{ $migration->database }}</td>
-                        <td>{{ $migration->setup_connection }}</td>
-                        <td>{{ $migration->schema }}</td>
-                        <td>{{ $migration->scheduler }}</td>
-                        <td>{{ $migration->time }}</td>
-                        <td>{{ $migration->duration }}</td>
-                        <td>{{ $migration->status }}</td>
+                        <td>
+                            {{ $migration->database }}
+                        </td>
+                        <td>
+                            @if ($migration->scheduler == 'on')
+                            {{ $migration->time }} -
+                            {{ $migration->duration }}
+                            @else
+                            {{ $migration->scheduler }}
+                            @endif
+                        </td>
+                        <td>
+                            @if ($migration->status == 'completed')
+                            <span class="badge badge-success">{{ $migration->status }}</span>
+                            @elseif($migration->status == 'progress')
+                            <span class="badge badge-warning">{{ $migration->status }}</span>
+                            @else
+                            <span class="badge badge-info">{{ $migration->status }}</span>
+                            @endif
+                        </td>
                         <td>{{ $migration->created_at }}</td>
                     </tr>
                     @endforeach
