@@ -13,7 +13,7 @@ class DatabaseRequest extends FormRequest
             'host' => ['required', 'string'],
             'port' => ['required', 'numeric'],
             'database' => ['required', 'string'],
-            'username' => ['required', 'string'],
+            'username' => ['nullable', 'string'],
             'password' => ['nullable', 'string'],
             'authSourceDatabase' => ['nullable', 'string'],
         ];

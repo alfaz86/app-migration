@@ -86,7 +86,11 @@ class ProcessMigration implements ShouldQueue
                     }
                     $getValueByPath = $this->getValueByPath($item, $value);
                     if (is_array($getValueByPath)) {
-                        $record[$key] = json_encode($getValueByPath);
+                        if ($this->driver == 'mongodb') {
+                            $record[$key] = (object)$getValueByPath;
+                        } else {
+                            $record[$key] = json_encode($getValueByPath);
+                        }
                     } else {
                         $record[$key] = $this->getValueByPath($item, $value);
                     }

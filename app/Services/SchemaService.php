@@ -11,8 +11,9 @@ class SchemaService
         $dataTypes = $data['data_type'];
         $nullables = $data['nullable'];
         $indexes = $data['index'];
+        $quationMark = $data['driver'] === 'pgsql' ? '"' : '`';
 
-        $schema = "CREATE TABLE IF NOT EXISTS $table (\n";
+        $schema = "CREATE TABLE IF NOT EXISTS $quationMark$table$quationMark (\n";
 
         $primaryKeys = [];
         $uniqueKeys = [];
@@ -26,12 +27,12 @@ class SchemaService
                 $type .= '(255)';
             }
 
-            $schema .= "    $column $type $nullable,\n";
+            $schema .= "    $quationMark$column$quationMark $type $nullable,\n";
 
             if ($indexes[$i] === 'primary') {
-                $primaryKeys[] = $column;
+                $primaryKeys[] = "$quationMark$column$quationMark";
             } elseif ($indexes[$i] === 'unique') {
-                $uniqueKeys[] = $column;
+                $uniqueKeys[] = "$quationMark$column$quationMark";
             }
         }
 
@@ -48,6 +49,7 @@ class SchemaService
 
         return $schema;
     }
+
 
     public function generateSchemaMapping($data)
     {

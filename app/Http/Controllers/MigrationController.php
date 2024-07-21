@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MigrationProcess;
+use App\Models\NonRelationalModel;
 use App\Models\RelationalModel;
 use App\Services\SchemaService;
 use Illuminate\Http\Request;
@@ -21,8 +22,12 @@ class MigrationController extends Controller
     
     public function index()
     {
-        $relationalDataTypes = RelationalModel::DATA_TYPES;
-        return view('migration', compact('relationalDataTypes'));
+        $dataTypes = [
+            'mysql' => RelationalModel::MYSQL_DATA_TYPES,
+            'pgsql' => RelationalModel::POSTGRESQL_DATA_TYPES,
+            'mongodb' => NonRelationalModel::MONGODB_DATA_TYPES
+        ];
+        return view('migration', compact('dataTypes'));
     }
 
     public function listMigration()
@@ -69,9 +74,12 @@ class MigrationController extends Controller
                 $migration->scheduler = $settings['scheduler'];
                 $migration->time = $settings['time'];
                 $migration->duration = $settings['duration'];
-                $migration->status = $settings['scheduler'] == 'off' ? 'progress' : 'waiting for shcedule';
+                $migration->status = $settings['scheduler'] == 'off' ? 'progress' : 'waiting for schedule';
                 $migration->auth_type = $settings['auth_type'];
                 $migration->auth_data = $settings['auth_data'];
+                $migration->duration_day_of_week = $settings['duration_day_of_week'] ?? null;
+                $migration->duration_day_of_month = $settings['duration_day_of_month'] ?? null;
+                $migration->duration_month = $settings['duration_month'] ?? null;
                 $migration->save();
             });
         } catch (\Throwable $th) {

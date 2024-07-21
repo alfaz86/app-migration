@@ -58,155 +58,174 @@
     <div class="card-body">
         <form id="migration-form">
             @csrf
-            <div id="form-api-endpoint" class="position-relative">
-                <div class="form-group" id="form-api-url">
-                    <h3><b>API Endpoint</b></h3>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <div class="dropdown">
-                                <select class="form-control" aria-label="Default select example" id="http-method" name="http_method">
-                                    <option value="GET">GET</option>
-                                    <option value="POST">POST</option>
-                                    <!-- <option value="PUT">PUT</option>
-                                    <option value="PATCH">PATCH</option>
-                                    <option value="DELETE">DELETE</option> -->
+            <!-- Step Bar Navigation -->
+            <ul class="nav nav-tabs" id="step-bar">
+                <li class="nav-item">
+                    <a class="nav-link active" id="step1-tab" data-toggle="tab" href="#step1">API Endpoint</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="step2-tab" data-toggle="tab" href="#step2">Destination Database</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="step3-tab" data-toggle="tab" href="#step3">Scheduler</a>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content pt-3">
+                <div class="tab-pane fade show active" id="step1" role="tabpanel" aria-labelledby="step1-tab">
+                    <div id="form-api-endpoint" class="position-relative">
+                        <div class="form-group" id="form-api-url">
+                            <h3><b>API Endpoint</b></h3>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <div class="dropdown">
+                                        <select class="form-control" aria-label="Default select example" id="http-method" name="http_method">
+                                            <option value="GET">GET</option>
+                                            <option value="POST">POST</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <input type="text" name="url" id="url" class="form-control" placeholder="Input URL" value="" autocomplete="url">
+                                <div class="input-group-prepend">
+                                    <button type="button" id="send-api-button" class="btn btn-primary" onclick="fetchData()">Kirim</button>
+                                </div>
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="auth-type">Authentication Type</label>
+                                <select class="form-control" id="auth-type" name="auth_type">
+                                    <option value="none">None</option>
+                                    <option value="basic">Basic Auth</option>
+                                    <option value="bearer">Bearer Token</option>
+                                    <option value="apikey">API Key</option>
                                 </select>
                             </div>
+                            <div class="form-group" id="auth-params">
+                                <!-- Fields for authentication parameters will be dynamically added here -->
+                            </div>
                         </div>
-                        <input type="text" name="url" id="url" class="form-control" placeholder="Input URL"
-                        value="https://jsonplaceholder.typicode.com/posts">
-                        <div class="input-group-prepend">
-                            <button type="button" id="send-api-button" class="btn btn-primary" onclick="fetchData()">Kirim</button>
+                        <div class="form-group">
+                            <label for="response">Response</label>
+                            <div class="area-display-response">
+                                <pre><code id="display-response"></code></pre>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="result-data">Result Data</label>
+                            <select class="form-control" aria-label="Default select example" id="result-data" name="result_data" required>
+                                {{-- <option value="current">Current Response</option> --}}
+                            </select>
                         </div>
                     </div>
-                    <div class="form-group mt-2">
-                        <label for="auth-type">Authentication Type</label>
-                        <select class="form-control" id="auth-type" name="auth_type">
-                            <option value="none">None</option>
-                            <option value="basic">Basic Auth</option>
-                            <option value="bearer">Bearer Token</option>
-                            {{-- <option value="oauth2">OAuth 2.0</option> --}}
-                            <option value="apikey">API Key</option>
+                </div>
+
+                <div class="tab-pane fade" id="step2" role="tabpanel" aria-labelledby="step2-tab">
+                    <div class="form-group position-relative" id="form-destination-database">
+                        <h3><b>Destination Database</b></h3>
+                        <select class="form-control my-2" name="driver" id="driver" onchange="setDefaultDatabase()">
+                            <optgroup label="Relational Databases">
+                                <option value="mysql">MySQL</option>
+                                <option value="pgsql">PostgreSQL</option>
+                            </optgroup>
+                            <optgroup label="Non-relational Databases">
+                                <option value="mongodb">MongoDB</option>
+                            </optgroup>
                         </select>
-                    </div>
-                    <div class="form-group" id="auth-params">
-                        <!-- Fields for authentication parameters will be dynamically added here -->
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="response">Response</label>
-                    <div class="area-display-response">
-                        <pre><code id="display-response"></code></pre>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="result-data">Result Data</label>
-                    <select class="form-control" aria-label="Default select example" id="result-data" name="result_data" required>
-                        {{-- <option value="current">Current Response</option> --}}
-                    </select>
-                </div>
-            </div>
-
-            <hr>
-
-            <div class="form-group position-relative" id="form-destination-database">
-                <h3><b>Destination Database</b></h3>
-                {{-- buat select option dengan name dan id driver dengan value mysql, pgsql --}}
-                <select class="form-control my-2" name="driver" id="driver" onchange="setDefaultDatabase()">
-                    <optgroup label="Relational Databases">
-                        <option value="mysql">MySQL</option>
-                        <option value="pgsql">PostgreSQL</option>
-                        {{-- <option value="sqlite">SQLite</option> --}}
-                    </optgroup>
-                    <optgroup label="Non-relational Databases">
-                        <option value="mongodb">MongoDB</option>
-                        {{-- <option value="couchdb">CouchDB</option>
-                        <option value="redis">Redis</option> --}}
-                    </optgroup>
-                </select>
-                
-                {{-- <input type="text" name="driver" id="driver" class="form-control my-2" placeholder="driver" value="mysql"> --}}
-                <input type="text" name="host" id="host" class="form-control my-2" placeholder="host" value="127.0.0.1">
-                <input type="text" name="port" id="port" class="form-control my-2" placeholder="port" value="3306">
-                <input type="text" name="database" id="database" class="form-control my-2" placeholder="database" value="app_migration_2">
-                <input type="text" name="username" id="username" class="form-control my-2" placeholder="username" value="root">
-                <input type="password" name="password" id="password" class="form-control my-2" placeholder="password" value="">
-                <input type="text" name="authSourceDatabase" id="authSourceDatabase" class="form-control my-2" placeholder="authSourceDatabase" value="" style="display: none">
-                <button type="button" id="check-connection-button" class="btn btn-secondary mt-3" onclick="checkConnection()">Check Connection</button>
-                {{-- <button type="button" class="btn btn-primary mt-3" onclick="setMigration()">Set</button> --}}
-
-                <div class="area-display-error-message my-2" style="display: none; position: relative;">
-                    <button type="button" id="close-button" class="btn btn-secondary btn-sm" style="position: absolute; top: 0; right: 0;">Close</button>
-                    <pre><code id="display-error-message"></code></pre>
-                </div>
-            </div>
-
-            <hr>
-
-            <div class="form-group" id="table-content" style="display: block">
-                <label for="table">Table</label>
-                <input type="text" name="table" id="table" class="form-control" placeholder="table">
-            </div>
-            <div class="form-group" id="collections-content" style="display: none">
-                <h3><b>Collections</b></h3>
-                <input type="text" name="collections" id="collections" class="form-control" placeholder="collections">
-            </div>
-            {{-- create input area with class schema --}}
-            <div class="form-group" id="field-content">
-                <label>Column</label>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Type Of Data</th>
-                            <th>Nullable</th>
-                            <th>Indeks</th>
-                            <th width="1">#</th>
-                        </tr>
-                    </thead>
-                    <tbody id="fields-body">
-                        
-                    </tbody>
-                    <tfoot id="field-footer">
-
-                    </tfoot>
-                </table>
-            </div>
-
-            <hr>
-
-            <div class="form-group">
-                <h3><b>Scheduler</b></h3>
-                <div class="btn-group" data-toggle="buttons">
-                    <label class="btn btn-success">
-                        <div class="custom-control custom-radio">
-                            <input type="radio" id="scheduler-on" name="scheduler" value="on" class="custom-control-input" onchange="toggleScheduler()">
-                            <label class="custom-control-label" for="scheduler-on">On</label>
+                        <input type="text" name="host" id="host" class="form-control my-2" placeholder="host" value="127.0.0.1">
+                        <input type="text" name="port" id="port" class="form-control my-2" placeholder="port" value="3306">
+                        <input type="text" name="database" id="database" class="form-control my-2" placeholder="database" value="destination_db">
+                        <input type="text" name="username" id="username" class="form-control my-2" placeholder="username" value="root">
+                        <input type="password" name="password" id="password" class="form-control my-2" placeholder="password" value="">
+                        <input type="text" name="authSourceDatabase" id="authSourceDatabase" class="form-control my-2" placeholder="authSource" value="" style="display: none">
+                        <button type="button" id="check-connection-button" class="btn btn-secondary mt-3" onclick="checkConnection()">Check Connection</button>
+                        <div class="area-display-error-message my-2" style="display: none; position: relative;">
+                            <button type="button" id="close-button" class="btn btn-secondary btn-sm" style="position: absolute; top: 0; right: 0;">Close</button>
+                            <pre><code id="display-error-message"></code></pre>
                         </div>
-                    </label>
-                    <label class="btn btn-danger">
-                        <div class="custom-control custom-radio">
-                            <input type="radio" id="scheduler-off" name="scheduler" value="off" class="custom-control-input" onchange="toggleScheduler()" checked>
-                            <label class="custom-control-label" for="scheduler-off">Off</label>
-                        </div>
-                    </label>
+                    </div>
+                    <div class="form-group" id="table-content" style="display: block">
+                        <label for="table">Table</label>
+                        <input type="text" name="table" id="table" class="form-control" placeholder="table">
+                    </div>
+                    <div class="form-group" id="collections-content" style="display: none">
+                        <h3><b>Collections</b></h3>
+                        <input type="text" name="collections" id="collections" class="form-control" placeholder="collections">
+                    </div>
+                    <div class="form-group" id="field-content">
+                        <label>Column</label>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type Of Data</th>
+                                    <th>Nullable</th>
+                                    <th>Index</th>
+                                    <th width="1">#</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fields-body">
+                            </tbody>
+                            <tfoot id="field-footer">
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
 
-                <br>
+                <div class="tab-pane fade" id="step3" role="tabpanel" aria-labelledby="step3-tab">
+                    <div class="form-group">
+                        <h3><b>Scheduler</b></h3>
+                        <div class="btn-group" data-toggle="buttons">
+                            <label class="btn btn-success">
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="scheduler-on" name="scheduler" value="on" class="custom-control-input" onchange="toggleScheduler()">
+                                    <label class="custom-control-label" for="scheduler-on">On</label>
+                                </div>
+                            </label>
+                            <label class="btn btn-danger active">
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="scheduler-off" name="scheduler" value="off" class="custom-control-input" onchange="toggleScheduler()" checked>
+                                    <label class="custom-control-label" for="scheduler-off">Off</label>
+                                </div>
+                            </label>
+                        </div>
+                        <br>
+                        <div id="form-scheduler">
+                            <label for="duration">Duration</label>
+                            <select class="form-control mb-1" name="duration" id="duration" onchange="toggleSchedulerFields()">
+                                <option value="minute">Menit</option>
+                                <option value="hour">Jam</option>
+                                <option value="day">Hari</option>
+                                <option value="week">Minggu</option>
+                                <option value="month">Bulan</option>
+                                <option value="year">Tahun</option>
+                            </select>
+                            <label for="time">Time</label>
+                            <input type="time" name="time" id="time" class="form-control mb-1" placeholder="Input Time">
 
-                <div id="form-scheduler">
-                    <label for="time">Time</label>
-                    <input type="time" name="time" id="time" class="form-control mb-1" placeholder="Input Time">
-
-                    <label for="duration">Duration</label>
-                    <select class="form-control" name="duration" id="duration">
-                        <option value="minute">Menit</option>
-                        <option value="hour">Jam</option>
-                        <option value="day">Hari</option>
-                        <option value="week">Minggu</option>
-                        <option value="month">Bulan</option>
-                        <option value="year">Tahun</option>
-                    </select>
+                            <div id="scheduler-options" style="display: none;">
+                                <div id="div-duration-day-of-week" style="display: none;">
+                                    <label for="duration_day_of_week">Day of the Week</label>
+                                    <select class="form-control mb-1" name="duration_day_of_week" id="duration_day_of_week">
+                                        <option value="1">Senin</option>
+                                        <option value="2">Selasa</option>
+                                        <option value="3">Rabu</option>
+                                        <option value="4">Kamis</option>
+                                        <option value="5">Jumat</option>
+                                        <option value="6">Sabtu</option>
+                                        <option value="7">Minggu</option>
+                                    </select>
+                                </div>
+                                <div id="div-duration-day-of-month" style="display: none;">
+                                    <label for="duration_day_of_month">Day of the Month</label>
+                                    <input type="number" name="duration_day_of_month" id="duration_day_of_month" class="form-control mb-1" min="1" max="31">
+                                </div>
+                                <div id="div-duration-month" style="display: none;">
+                                    <label for="duration_month">Month</label>
+                                    <input type="number" name="duration_month" id="duration_month" class="form-control mb-1" min="1" max="12">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </form>
@@ -217,7 +236,7 @@
 @section('footer')
 <div class="submit-container">
     <div class="area-btn-submit w-100 bg-white p-4 text-right shadow-lg">
-        <button class="btn btn-primary btn-submit" onclick="submitForm()">Create Migration</button>
+        <button class="btn btn-primary btn-submit" id="submit-button" disabled onclick="submitForm()">Create Migration</button>
     </div>
 </div>
 @endsection
@@ -230,11 +249,73 @@
     let connectionDB = {};
     let fieldCount = 1;
     let fieldKey = [];
+    const dataTypes = @json($dataTypes);
     const exitButton = document.getElementById('close-button');
     const selectAuthenticationType = document.getElementById('auth-type');
     const selectResultData = document.getElementById('result-data');
     const selectDriver = document.getElementById('driver');
     const transformTable = document.getElementById('field-content');
+</script>
+
+{{-- step bar navigation --}}
+<script>
+    // Variables to keep track of form completion
+    const stepsCompleted = { step1: false, step2: false, step3: false };
+
+    // Function to check if all steps are completed
+    function checkFormCompletion() {
+        const allStepsCompleted = Object.values(stepsCompleted).every(Boolean);
+        document.getElementById('submit-button').disabled = !allStepsCompleted;
+    }
+
+    // Function to validate Step 1
+    function validateStep1() {
+        const url = document.getElementById('url').value;
+        const resultData = document.getElementById('result-data').value;
+        stepsCompleted.step1 = !!(resultData && url);
+        checkFormCompletion();
+    }
+
+    // Function to validate Step 2
+    function validateStep2() {
+        const driver = document.getElementById('driver').value;
+        const host = document.getElementById('host').value;
+        const port = document.getElementById('port').value;
+        const database = document.getElementById('database').value;
+        const table = document.getElementById('table').value;
+        const collections = document.getElementById('collections').value;
+        const fieldsCount = document.querySelectorAll('#fields-body tr').length;
+        let tableOrCollection = table;
+        if (driver === 'mongodb') {
+            tableOrCollection = collections;
+        }
+        stepsCompleted.step2 = !!(driver && host && port && database && tableOrCollection && fieldsCount);
+        checkFormCompletion();
+    }
+
+    // Function to validate Step 3
+    function validateStep3() {
+        const schedulerOn = document.getElementById('scheduler-on');
+        const time = document.getElementById('time').value;
+        const duration = document.getElementById('duration').value;
+        stepsCompleted.step3 = schedulerOn.checked ? !!(time && duration) : true;
+        checkFormCompletion();
+    }
+
+    // Event listeners for validation
+    document.getElementById('url').addEventListener('input', validateStep1);
+    document.getElementById('result-data').addEventListener('change', validateStep1);
+    document.getElementById('driver').addEventListener('change', validateStep2);
+    document.getElementById('host').addEventListener('input', validateStep2);
+    document.getElementById('port').addEventListener('input', validateStep2);
+    document.getElementById('database').addEventListener('input', validateStep2);
+    document.getElementById('username').addEventListener('input', validateStep2);
+    document.getElementById('password').addEventListener('input', validateStep2);
+    document.getElementById('table').addEventListener('input', validateStep2);
+    document.getElementById('collections').addEventListener('input', validateStep2);
+    document.getElementById('time').addEventListener('input', validateStep3);
+    document.getElementById('duration').addEventListener('change', validateStep3);
+    validateStep3();
 </script>
 
 {{-- event of element --}}
@@ -247,7 +328,6 @@
     selectAuthenticationType.addEventListener('change', function() {
         var authType = this.value;
         var authParamsDiv = document.getElementById('auth-params');
-        var inputURL = document.getElementById('url');
         authParamsDiv.innerHTML = '';
 
         if (authType === 'basic') {
@@ -257,20 +337,18 @@
                     <input type="password" id="password" name="password" class="form-control" placeholder="Password">
                 </div>`;
         } else if (authType === 'bearer') {
-            inputURL.value = 'http://firefly-lar10.test/api/v1/accounts/67/transactions';
             authParamsDiv.innerHTML = `
                 <div class="form-group">
-                    <input type="text" id="token" name="token" class="form-control" placeholder="Token"
-                    value="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNjViMWNjZGJmNGFhZTNjMGQ3MmFkMzIzZDhiMzc1MzhkN2IyODE1MmFkNTgzYzYxNzYxYTdiNDAwM2Q1Mzc1M2QyYzBmZjJlODg5MmQyZjQiLCJpYXQiOjE3MjAxNjAxMTAuMzc3MTM1LCJuYmYiOjE3MjAxNjAxMTAuMzc3MTM4LCJleHAiOjE3NTE2OTYxMTAuMDQ4NzAzLCJzdWIiOiIxIiwic2NvcGVzIjpbXX0.Xvk4pwPpsahhRFrs88ry7sQcAbLAaRLrwlBqXEzUh4vdHvfioeaNKbS6jn2IQoL5m30FfP2WBcEK3-47ktDzLyB9wxWlDyotnEXjD0N7KHvtmT_43i0nlK2J7XCAk0rHlQYZsWxgKPYlRUbNX1s8J-a5vxYpCvej_AkMZRg-4Ry3NDuQDnU9KcGNkrMFSfAhu1qsFm1Pr8vbR8lalAo5tFy5Bo_tol8s1NzZ3zvxYoVSAbkO3FvI3J5djJz365a4lKUPvpgHm6ne94XDXpLR0UzBc3omNs2UOIo7tQ5ytqYL9i5ad1EcB2L4a4R8xQRc7z65jj0Z0sVV0k9BcxUF8ICGAQ0Y7qx4JyHcZDt2q0g3LdEuh-FQUidrNKxqyDsoqImXpAfNYH_HUA4O-4ULOzYDp6Pm9BUit4quX1iRgMfPjMyf74K9nU9VJVgJStb66p6IRPXGGKcfoA-mDHmwtlIjRApvH-h81isbA4edZ72sfhLHNIOAu_AWYTsEHosV-B23zWzP77xKsu1nUMGXIu7jP2wjT0eg0AypIlChmYT9fOGF8jlkEzCDTxWpyysRMexveOAuUEtEXNig_w1RmSALeYLHWnvNmYpmneebYJGGyUW8xu1lfSK6u5CQPkqZEEL5uXHxvXj-z50sBJ1HDDQUzsj-aFe0R8qZOfJnvE0">
+                    <input type="text" id="token" name="token" class="form-control" placeholder="Token" 
+                    value="">
                 </div>`;
         } else if (authType === 'apikey') {
-            inputURL.value = 'https://api.rajaongkir.com/starter/province';
             authParamsDiv.innerHTML = `
                 <div class="form-group">
                     <input type="text" id="apikey" name="apikey" class="form-control" placeholder="API Key"
-                    value="key">
+                    value="">
                     <input type="text" id="apivalue" name="apivalue" class="form-control" placeholder="API Value"
-                    value="0e54283c64a3ae525f5868b95ec8c39b">
+                    value="">
                 </div>`;
         }
         // Add more fields for OAuth 2.0 if needed
@@ -337,6 +415,7 @@
                     setObjectData(result_data[0]);
                     setFieldData();
                 }
+                validateStep1()
             },
             error: function(xhr) {
                 alert('terjadi kesalahan dari API Endpoint');
@@ -546,9 +625,10 @@
         } else {
             formScheduler.style.display = 'none';
         }
+        validateStep3();
     }
 
-    function setDefaultDatabase(database) {
+    function setDefaultDatabase() {
         var driver = document.getElementById('driver').value;
         var host = document.getElementById('host');
         var port = document.getElementById('port');
@@ -586,7 +666,7 @@
             username.value = 'admin';
             password.value = '';
             authSourceDatabase.style.display = 'block';
-            authSourceDatabase.value = 'authSourceDatabase';
+            authSourceDatabase.value = '';
             table.style.display = 'none';
             collections.style.display = 'block';
         }
@@ -640,28 +720,31 @@
         var attributes = fieldKey.map(attribute => `<option value="${attribute}">${attribute}</option>`).join('');
         var display = driver === 'mongodb' ? 'display: none;' : '';
         fieldCount++;
+
+        var dataTypeOptions = Object.entries(dataTypes[driver]).map(([key, value]) => {
+            return `<option value="${value}">${key}</option>`;
+        }).join('');
+        
         const row = `
             <tr>
                 <td style="max-width:200px;">
-                    <select class="form-control" name="column_name[]" id="column-name-1">
+                    <select class="form-control" name="column_name[]" id="column-name-${fieldCount}">
                         ${attributes}
                     </select>
                 </td>
                 <td style="max-width:200px;">
-                    <select class="form-control" name="data_type[]" id="data-type-1">
-                        @foreach ($relationalDataTypes as $item)
-                            <option value="{{ $item }}">{{ $item }}</option>
-                        @endforeach
+                    <select class="form-control" name="data_type[]" id="data-type-${fieldCount}">
+                        ${dataTypeOptions}
                     </select>
                 </td>
                 <td style="max-width:200px; ${display}">
-                    <select class="form-control" name="nullable[]" id="nullable-1">
+                    <select class="form-control" name="nullable[]" id="nullable-${fieldCount}">
                         <option value="true">True</option>
                         <option value="false" selected>False</option>
                     </select>
                 </td>
                 <td style="max-width:200px; ${display}">
-                    <select class="form-control" name="index[]" id="index-1">
+                    <select class="form-control" name="index[]" id="index-${fieldCount}">
                         <option value="">---</option>
                         <option value="primary">Primary</option>
                         <option value="unique">Unique</option>
@@ -687,44 +770,41 @@
         }
         $('#fields-body').append(row);
         $('#field-footer').html(footer);
+        validateStep2();
     }
 
     function removeField(button) {
         $(button).closest('tr').remove();
     }
 
+    function toggleSchedulerFields() {
+        var duration = document.getElementById('duration').value;
+        var schedulerOptions = document.getElementById('scheduler-options');
+        var dayOfWeek = document.getElementById('div-duration-day-of-week');
+        var dayOfMonth = document.getElementById('div-duration-day-of-month');
+        var month = document.getElementById('div-duration-month');
+
+        schedulerOptions.style.display = 'none';
+        dayOfWeek.style.display = 'none';
+        dayOfMonth.style.display = 'none';
+        month.style.display = 'none';
+
+        if (duration === 'week') {
+            schedulerOptions.style.display = 'block';
+            dayOfWeek.style.display = 'block';
+        } else if (duration === 'month') {
+            schedulerOptions.style.display = 'block';
+            dayOfMonth.style.display = 'block';
+        } else if (duration === 'year') {
+            schedulerOptions.style.display = 'block';
+            dayOfMonth.style.display = 'block';
+            month.style.display = 'block';
+        }
+    }
 </script>
 
 {{-- submit form --}}
 <script>
-    function validateForm() {
-        var url = document.getElementById('url').value;
-        var resultData = document.getElementById('result-data').value;
-        var driver = document.getElementById('driver').value;
-        var host = document.getElementById('host').value;
-        var port = document.getElementById('port').value;
-        var database = document.getElementById('database').value;
-        var username = document.getElementById('username').value;
-        var password = document.getElementById('password').value;
-        var authSourceDatabase = document.getElementById('authSourceDatabase').value;
-        var table = document.getElementById('table').value;
-        var collections = document.getElementById('collections').value;
-
-        if (!url || !resultData || !driver || !host || !port || !database || !username) {
-            if (driver === 'mongodb') {
-                if (!authSourceDatabase || !collections) {
-                    alert('Pastikan semua input terisi');
-                    return false;
-                }
-            } else {
-                if (!table) {
-                    alert('Pastikan semua input terisi');
-                    return false;
-                }
-            }
-        }
-    }
-
     function submitForm() {
         var form = document.getElementById('migration-form');
         var formData = new FormData(form);
@@ -759,8 +839,10 @@
             success: function(response) {
                 processMigration(response.id);
                 alert('Migrasi berhasil dibuat');
+                window.location.href = "{{ route('migration.list') }}";
             },
             error: function(xhr) {
+                console.log('Error: ' + xhr.responseText);
                 alert('Migrasi gagal dibuat');
             }
         });
