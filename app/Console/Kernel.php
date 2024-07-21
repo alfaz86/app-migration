@@ -38,18 +38,22 @@ class Kernel extends ConsoleKernel
                         ->timezone('Asia/Jakarta');
 
                 } elseif ($migrationProcess->duration == 'week') {
+                    $dayOfWeek = $migrationProcess->duration_day_of_week;
                     $schedule->command($command)
-                        ->weeklyOn(1, $timeString)
+                        ->weeklyOn($dayOfWeek, $timeString)
                         ->timezone('Asia/Jakarta');
 
                 } elseif ($migrationProcess->duration == 'month') {
+                    $dayOfMonth = $migrationProcess->duration_day_of_month;
                     $schedule->command($command)
-                        ->monthlyOn(1, $timeString)
+                        ->monthlyOn($dayOfMonth, $timeString)
                         ->timezone('Asia/Jakarta');
 
                 } elseif ($migrationProcess->duration == 'year') {
+                    $dayOfMonth = $migrationProcess->duration_day_of_month;
+                    $month = $migrationProcess->duration_month;
                     $schedule->command($command)
-                        ->yearlyOn(1, $timeString)
+                        ->yearlyOn($month, $dayOfMonth, $timeString)
                         ->timezone('Asia/Jakarta');
                 }
             }
