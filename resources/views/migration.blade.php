@@ -116,6 +116,28 @@
                                 {{-- <option value="current">Current Response</option> --}}
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label for="loop">API Paging</label>
+                            <br>
+                            <div class="btn-group" data-toggle="buttons">
+                                <label class="btn btn-success">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="loop-on" name="loop" value="1" class="custom-control-input" onchange="toggleLoop()">
+                                        <label class="custom-control-label" for="loop-on">On</label>
+                                    </div>
+                                </label>
+                                <label class="btn btn-danger active">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="loop-off" name="loop" value="0" class="custom-control-input" onchange="toggleLoop()" checked>
+                                        <label class="custom-control-label" for="loop-off">Off</label>
+                                    </div>
+                                </label>
+                            </div>
+                            <div id="total-page" style="display: none;">
+                                <label for="total_page">Total</label>
+                                <input type="number" name="total_page" id="total-page" class="form-control mb-1" min="1" value="1">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -206,6 +228,7 @@
                                 <div id="div-duration-day-of-week" style="display: none;">
                                     <label for="duration_day_of_week">Day of the Week</label>
                                     <select class="form-control mb-1" name="duration_day_of_week" id="duration_day_of_week">
+                                        <option value="" selected disabled>-</option>
                                         <option value="1">Senin</option>
                                         <option value="2">Selasa</option>
                                         <option value="3">Rabu</option>
@@ -775,6 +798,18 @@
 
     function removeField(button) {
         $(button).closest('tr').remove();
+    }
+
+    function toggleLoop() {
+        var loopOn = document.getElementById('loop-on');
+        var loopOff = document.getElementById('loop-off');
+        var totalPage = document.getElementById('total-page');
+
+        if (loopOn.checked) {
+            totalPage.style.display = 'block';
+        } else {
+            totalPage.style.display = 'none';
+        }
     }
 
     function toggleSchedulerFields() {

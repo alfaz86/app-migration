@@ -80,6 +80,8 @@ class MigrationController extends Controller
                 $migration->duration_day_of_week = $settings['duration_day_of_week'] ?? null;
                 $migration->duration_day_of_month = $settings['duration_day_of_month'] ?? null;
                 $migration->duration_month = $settings['duration_month'] ?? null;
+                $migration->loop = $settings['loop'];
+                $migration->total_page = $settings['total_page'];
                 $migration->save();
             });
         } catch (\Throwable $th) {

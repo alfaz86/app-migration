@@ -40,6 +40,8 @@
                             <span class="badge badge-success">{{ $migration->status }}</span>
                             @elseif($migration->status == 'progress')
                             <span class="badge badge-warning">{{ $migration->status }}</span>
+                            @elseif($migration->status == 'failed')
+                            <span class="badge badge-danger">{{ $migration->status }}</span>
                             @else
                             <span class="badge badge-info">{{ $migration->status }}</span>
                             @endif

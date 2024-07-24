@@ -3,77 +3,65 @@
 namespace App\Jobs;
 
 use App\Models\MigrationProcess;
+use App\Services\APIService;
+use App\Services\DatabaseService;
 use App\Traits\CollectionEnpoint;
+use App\Traits\LogProcessMigration;
+use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ProcessMigration implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, CollectionEnpoint;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, CollectionEnpoint, LogProcessMigration;
 
     protected $migration;
-    protected $driver;
     protected $url;
+    protected $totalRequest;
+    protected $migrationProcessID;
 
-    public function __construct(MigrationProcess $migration, string $driver, string $url)
+    public function __construct(MigrationProcess $migration, string $url, int $totalRequest)
     {
         $this->migration = $migration;
-        $this->driver = $driver;
         $this->url = $url;
+        $this->totalRequest = $totalRequest;
+        $this->migrationProcessID = $migration->id;
     }
 
     public function handle(): void
     {
+        $apiService = new APIService();
+
+        $databaseRequest = json_decode($this->migration['setup_connection'], true);
+        $driver = $databaseRequest['driver'];
+        if ($driver === 'mongodb') {
+            $databaseRequest['authSourceDatabase'] = $databaseRequest['options']['database'] ?? '';
+        }
+        $databaseService = new DatabaseService();
+        $databaseService->setDatabaseConfig($databaseRequest);
+
         $startTime = microtime(true);
 
-        $httpMethod = $this->migration['http_method'];
-        $resultData = $this->migration['result_data'];
-        $authType = $this->migration['auth_type'];
-        $authData = json_decode($this->migration['auth_data'], true);
-
-        // Mengatur klien HTTP dengan opsi autentikasi
-        $client = Http::withOptions(['verify' => false]);
-
-        switch ($authType) {
-            case 'basic':
-                $client = $client->withBasicAuth($authData['username'], $authData['password']);
-                break;
-            case 'bearer':
-                $client = $client->withToken($authData['token']);
-                break;
-            case 'apikey':
-                $client = $client->withHeaders([$authData['key'] => $authData['value']]);
-                break;
-            case 'oauth2':
-                // Handle OAuth 2.0 specific logic here
-                break;
-            case 'none':
-            default:
-                // No additional authentication
-                break;
-        }
-
-        $response = $client->send($httpMethod, $this->url);
+        $response = $apiService->sendAPI($this->migration, $this->url);
 
         if ($response->successful()) {
-            $dynamic_db = 'dynamic_' . $this->driver;
+            $dynamic_db = 'dynamic_' . $driver;
             $connection = DB::connection($dynamic_db);
 
             // Buat tabel jika belum ada
-            if ($this->driver == 'mongodb') {
+            if ($driver == 'mongodb') {
                 $connection->createCollection($this->migration['collections']);
             } else {
                 $connection->statement($this->migration['schema']);
             }
 
             $data = $response->json();
-            $data = $this->setObjectData($resultData, $data);
+            $data = $this->setObjectData($this->migration['result_data'], $data);
             $count = 0;
 
             foreach ($data as $item) {
@@ -86,8 +74,8 @@ class ProcessMigration implements ShouldQueue
                     }
                     $getValueByPath = $this->getValueByPath($item, $value);
                     if (is_array($getValueByPath)) {
-                        if ($this->driver == 'mongodb') {
-                            $record[$key] = (object)$getValueByPath;
+                        if ($driver == 'mongodb') {
+                            $record[$key] = (object) $getValueByPath;
                         } else {
                             $record[$key] = json_encode($getValueByPath);
                         }
@@ -97,7 +85,7 @@ class ProcessMigration implements ShouldQueue
                 }
 
                 // Check driver and insert data accordingly
-                if ($this->driver == 'mongodb') {
+                if ($driver == 'mongodb') {
                     DB::transaction(function () use ($connection, $record, &$count) {
                         $success = $connection->collection($this->migration['collections'])->insert($record);
 
@@ -121,21 +109,19 @@ class ProcessMigration implements ShouldQueue
             }
 
             $endTime = microtime(true);
-            $executionTime = $endTime - $startTime;
-            
-            $startDateTime = \DateTime::createFromFormat('U.u', sprintf('%.6F', $startTime));
-            $startDateTimeString = $startDateTime->format('Y-m-d H:i:s.u');
-            $endDateTime = \DateTime::createFromFormat('U.u', sprintf('%.6F', $endTime));
-            $endDateTimeString = $endDateTime->format('Y-m-d H:i:s.u');
 
-            Log::info('Driver: ' . $this->driver . PHP_EOL .
-                'Migrasi ke database: ' . $this->migration['database'] . '.' . ($this->migration['table'] ?? $this->migration['collections']) . PHP_EOL .
-                'Start: ' . $startDateTimeString . PHP_EOL .
-                'End: ' . $endDateTimeString . PHP_EOL .
-                'Waktu eksekusi migrasi: ' . $executionTime . ' detik' . PHP_EOL .
-                'Jumlah data yang berhasil diinput: ' . $count);
+            $this->logSuccessProcessMigration($driver, $startTime, $endTime, $count);
         } else {
             Log::error('Error: ' . $response->status() . ' ' . $response->body());
         }
+        
+        dispatch(new CheckAllJobsDone($this->migrationProcessID, $this->totalRequest));
+    }
+
+    public function failed(Exception $exception)
+    {
+        $migrationProcess = MigrationProcess::find($this->migrationProcessID);
+        $migrationProcess->status = 'failed';
+        $migrationProcess->save();
     }
 }
