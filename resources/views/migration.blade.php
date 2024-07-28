@@ -66,9 +66,11 @@
                 <li class="nav-item">
                     <a class="nav-link" id="step2-tab" data-toggle="tab" href="#step2">Destination Database</a>
                 </li>
+                @if ($auto)
                 <li class="nav-item">
                     <a class="nav-link" id="step3-tab" data-toggle="tab" href="#step3">Scheduler</a>
                 </li>
+                @endif
             </ul>
 
             <!-- Tab Content -->
