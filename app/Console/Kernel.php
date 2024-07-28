@@ -20,7 +20,7 @@ class Kernel extends ConsoleKernel
         if (count($migrationProcesses) > 0) {
             foreach ($migrationProcesses as $migrationProcess) {
                 $timeString = substr($migrationProcess->time, 0, 5);
-                $command = "app:migrate-process {$migrationProcess->id}";
+                $command = "migrate:dispatch {$migrationProcess->id}";
 
                 if ($migrationProcess->duration == 'minute') {
                     $schedule->command($command)

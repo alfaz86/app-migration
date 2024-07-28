@@ -14,10 +14,12 @@ use Illuminate\Support\Facades\Log;
 class MigrationController extends Controller
 {
     protected $schemaService;
+    protected $autoMigration;
 
     public function __construct()
     {
         $this->schemaService = new SchemaService();
+        $this->autoMigration = env('AUTO_MIGRATION_PROCESS');
     }
     
     public function index()
@@ -27,7 +29,8 @@ class MigrationController extends Controller
             'pgsql' => RelationalModel::POSTGRESQL_DATA_TYPES,
             'mongodb' => NonRelationalModel::MONGODB_DATA_TYPES
         ];
-        return view('migration', compact('dataTypes'));
+        $auto = $this->autoMigration;
+        return view('migration', compact('dataTypes', 'auto'));
     }
 
     public function listMigration()
@@ -82,6 +85,7 @@ class MigrationController extends Controller
                 $migration->duration_month = $settings['duration_month'] ?? null;
                 $migration->loop = $settings['loop'];
                 $migration->total_page = $settings['total_page'];
+                $migration->auto_migration_process = $this->autoMigration;
                 $migration->save();
             });
         } catch (\Throwable $th) {
@@ -108,7 +112,11 @@ class MigrationController extends Controller
         try {
             $migrationProcess = MigrationProcess::find($request->id);
             if ($migrationProcess->scheduler === 'off') {
-                Artisan::call('app:migrate-process', ['migrationProcessID' => $request->id]);
+                if (env('AUTO_MIGRATION_PROCESS') == 'true') {
+                    Artisan::call('migrate:dispatch', ['migrationProcessID' => $request->id]);
+                } else {
+                    Artisan::call('migrate:execute', ['migrationProcessID' => $request->id]);
+                }
             }
         } catch (\Throwable $th) {
             Log::error($th->getMessage());

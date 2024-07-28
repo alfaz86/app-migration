@@ -6,10 +6,10 @@ use App\Jobs\ProcessMigration;
 use App\Models\MigrationProcess;
 use Illuminate\Console\Command;
 
-class MigrateProcess extends Command
+class DispatchMigrationJobsCommand extends Command
 {
-    protected $signature = 'app:migrate-process {migrationProcessID}';
-    protected $description = 'Migrate process';
+    protected $signature = 'migrate:dispatch {migrationProcessID}';
+    protected $description = 'Dispatch migration jobs for process with given ID';
 
     public function handle()
     {

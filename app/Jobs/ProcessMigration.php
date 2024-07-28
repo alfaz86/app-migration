@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\MigrationProcess;
+use App\Models\MigrationProcessLog;
 use App\Services\APIService;
 use App\Services\DatabaseService;
 use App\Traits\CollectionEnpoint;
@@ -110,11 +111,18 @@ class ProcessMigration implements ShouldQueue
 
             $endTime = microtime(true);
 
-            $this->logSuccessProcessMigration($driver, $startTime, $endTime, $count);
+            MigrationProcessLog::create([
+                'migration_process_id' => $this->migration->id,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'total_data' => $count,
+            ]);
+
+            // $this->logSuccessProcessMigration($this->migration, $driver, $startTime, $endTime, $count);
         } else {
             Log::error('Error: ' . $response->status() . ' ' . $response->body());
         }
-        
+
         dispatch(new CheckAllJobsDone($this->migrationProcessID, $this->totalRequest));
     }
 
