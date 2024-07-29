@@ -38,7 +38,9 @@ class ExecuteMigrationCommand extends Command
 
             for ($key = 1; $key <= $total_request; $key++) {
                 $paging = '';
-                if ($total_page > 1) {
+                if (strpos($migration->url, '?') !== false) {
+                    $paging = '&page=' . $key;
+                } else {
                     $paging = '?page=' . $key;
                 }
                 $url = $migration->url . $paging;
