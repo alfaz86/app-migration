@@ -33,9 +33,17 @@ class MigrationController extends Controller
         return view('migration', compact('dataTypes', 'auto'));
     }
 
-    public function listMigration()
+    public function listMigration(Request $request)
     {
-        $migrations = MigrationProcess::orderBy('created_at', 'desc')->paginate(25);
+        $migrations = MigrationProcess::query();
+
+        if ($request->has('tag')) {
+            $migrations = $migrations->where('auto_migration_process', $request->tag);
+        }
+
+        $migrations = $migrations->orderBy('created_at', 'desc')
+            ->paginate(25);
+
         return view('migration-list', compact('migrations'));
     }
 
