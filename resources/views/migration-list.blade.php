@@ -18,6 +18,7 @@
                         <th>Scheduler</th>
                         <th>Status</th>
                         <th>Created At</th>
+                        <th>Kelompok</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -47,6 +48,7 @@
                             @endif
                         </td>
                         <td>{{ $migration->created_at }}</td>
+                        <td>{!! $migration->autoMigrationProcess !!}</td>
                     </tr>
                     @endforeach
                 </tbody>
