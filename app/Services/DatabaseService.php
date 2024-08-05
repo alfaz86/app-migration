@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 class DatabaseService
 {
     const SUPPORTED_DRIVERS = ['mysql', 'pgsql', 'mongodb'];
-    
+
     public function __construct()
     {
         // 
@@ -17,17 +17,29 @@ class DatabaseService
     public function setDatabaseConfig($config)
     {
         $dynamic_db = 'dynamic_' . $config['driver'];
-        Config::set("database.connections.$dynamic_db", [
-            'driver' => $config['driver'],
-            'host' => $config['host'],
-            'port' => $config['port'],
-            'database' => $config['database'],
-            'username' => $config['username'] ?? '',
-            'password' => $config['password'] ?? '',
-            'options' => [
-                'database' => $config['authSourceDatabase'] ?? '',
-            ],
-        ]);
+        if ($config['driver'] == 'mongodb' && $config['mongo_connection_string_scheme'] == 'mongodb+srv') {
+            Config::set("database.connections.$dynamic_db", [
+                'driver' => $config['driver'],
+                'dsn' => $this->getDsn($config),
+                'database' => $config['database'],
+                'options' => [
+                    'database' => $config['authSourceDatabase'] ?? 'admin',
+                    'ssl' => true,
+                ],
+            ]);
+        } else {
+            Config::set("database.connections.$dynamic_db", [
+                'driver' => $config['driver'],
+                'host' => $config['host'],
+                'port' => $config['port'],
+                'database' => $config['database'],
+                'username' => $config['username'] ?? '',
+                'password' => $config['password'] ?? '',
+                'options' => [
+                    'database' => $config['authSourceDatabase'] ?? 'admin',
+                ],
+            ]);
+        }
     }
 
     public function checkConnection($config)
@@ -56,5 +68,15 @@ class DatabaseService
         }
 
         return $data;
+    }
+
+    public function getDsn($config)
+    {
+        if ($config['driver'] === 'mongodb') {
+            $dsn = 'mongodb+srv://' . $config['username'] . ':' . $config['password'] . '@' . $config['host'];
+            return $dsn;
+        }
+
+        throw new \Exception("Unsupported database driver.", 400);
     }
 }
