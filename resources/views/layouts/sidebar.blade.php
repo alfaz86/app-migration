@@ -1,11 +1,13 @@
 <nav class="sidebar-nav">
     <ul id="sidebarnav">
-        <li class="sidebar-item"> <a class="sidebar-link sidebar-link active" href="/" aria-expanded="false"><i data-feather="home" class="feather-icon"></i><span class="hide-menu">Dashboard</span></a></li>
-        <li class="list-divider"></li>
+        {{-- <li class="sidebar-item"> <a class="sidebar-link sidebar-link active" href="/" aria-expanded="false"><i data-feather="home" class="feather-icon"></i><span class="hide-menu">Dashboard</span></a></li>
+        <li class="list-divider"></li> --}}
         <li class="nav-small-cap"><span class="hide-menu">Applications</span></li>
-
         <li class="sidebar-item"> <a class="sidebar-link" href="/migration" aria-expanded="false"><i data-feather="repeat" class="feather-icon"></i><span class="hide-menu">Migration</span></a></li>
         <li class="sidebar-item"> <a class="sidebar-link" href="/migration/list" aria-expanded="false"><i data-feather="sidebar" class="feather-icon"></i><span class="hide-menu">Migration List</span></a>
+        
+        <li class="nav-small-cap mt-3"><span class="hide-menu">Monitoring</span></li>
+        <li class="sidebar-item"> <a class="sidebar-link" href="/telescope" aria-expanded="false"><i data-feather="monitor" class="feather-icon"></i><span class="hide-menu">Telescope</span></a></li>
         {{-- <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="#" aria-expanded="false"><i data-feather="message-square" class="feather-icon"></i><span class="hide-menu">Another Menu</span></a></li>
         <li class="sidebar-item"> <a class="sidebar-link sidebar-link" href="#" aria-expanded="false"><i data-feather="calendar" class="feather-icon"></i><span class="hide-menu">Another Menu</span></a></li> --}}
 

@@ -122,13 +122,13 @@
                             <label for="loop">API Paging</label>
                             <br>
                             <div class="btn-group" data-toggle="buttons">
-                                <label class="btn btn-success">
+                                <label class="btn btn-light">
                                     <div class="custom-control custom-radio">
                                         <input type="radio" id="loop-on" name="loop" value="1" class="custom-control-input" onchange="toggleLoop()">
                                         <label class="custom-control-label" for="loop-on">On</label>
                                     </div>
                                 </label>
-                                <label class="btn btn-danger active">
+                                <label class="btn btn-secondary active">
                                     <div class="custom-control custom-radio">
                                         <input type="radio" id="loop-off" name="loop" value="0" class="custom-control-input" onchange="toggleLoop()" checked>
                                         <label class="custom-control-label" for="loop-off">Off</label>
@@ -155,8 +155,22 @@
                                 <option value="mongodb">MongoDB</option>
                             </optgroup>
                         </select>
-                        <input type="text" name="host" id="host" class="form-control my-2" placeholder="host" value="127.0.0.1">
-                        <input type="text" name="port" id="port" class="form-control my-2" placeholder="port" value="3306">
+                        <div class="btn-group" data-toggle="buttons" id="mongo-connection-string-scheme" style="display: none">
+                            <label class="btn btn-outline-secondary mr-2">
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="mongo-connection-scheme-mongodb" name="mongo_connection_scheme" value="on" class="custom-control-input" onchange="toggleMongoConnectionStringScheme()" checked>
+                                    <label class="custom-control-label" for="mongo-connection-scheme-mongodb">mongodb</label>
+                                </div>
+                            </label>
+                            <label class="btn btn-outline-secondary">
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="mongo-connection-scheme-mongodb-srv" name="mongo_connection_scheme" value="off" class="custom-control-input" onchange="toggleMongoConnectionStringScheme()">
+                                    <label class="custom-control-label" for="mongo-connection-scheme-mongodb-srv">mongodb+srv</label>
+                                </div>
+                            </label>
+                        </div>
+                        <input type="text" name="host" id="host" class="form-control my-2" placeholder="host" value="localhost">
+                        <input type="text" name="port" id="port" class="form-control my-2" placeholder="port" value="3306" style="display: block">
                         <input type="text" name="database" id="database" class="form-control my-2" placeholder="database" value="destination_db">
                         <input type="text" name="username" id="username" class="form-control my-2" placeholder="username" value="root">
                         <input type="password" name="password" id="password" class="form-control my-2" placeholder="password" value="">
@@ -199,13 +213,13 @@
                     <div class="form-group">
                         <h3><b>Scheduler</b></h3>
                         <div class="btn-group" data-toggle="buttons">
-                            <label class="btn btn-success">
+                            <label class="btn btn-light">
                                 <div class="custom-control custom-radio">
                                     <input type="radio" id="scheduler-on" name="scheduler" value="on" class="custom-control-input" onchange="toggleScheduler()">
                                     <label class="custom-control-label" for="scheduler-on">On</label>
                                 </div>
                             </label>
-                            <label class="btn btn-danger active">
+                            <label class="btn btn-secondary active">
                                 <div class="custom-control custom-radio">
                                     <input type="radio" id="scheduler-off" name="scheduler" value="off" class="custom-control-input" onchange="toggleScheduler()" checked>
                                     <label class="custom-control-label" for="scheduler-off">Off</label>
@@ -456,6 +470,7 @@
     // fungsi untuk check koneksi database
     function checkConnection() {
         var driver = document.getElementById('driver').value;
+        var mongoConnectionScheme = document.getElementById('mongo-connection-scheme-mongodb');
         var host = document.getElementById('host').value;
         var port = document.getElementById('port').value;
         var database = document.getElementById('database').value;
@@ -475,7 +490,8 @@
                 database,
                 username,
                 password,
-                authSourceDatabase
+                authSourceDatabase,
+                mongo_connection_string_scheme: (mongoConnectionScheme.checked ? 'mongodb' : 'mongodb+srv'),
             },
             success: function(response) {
                 exitButton.click();
@@ -655,6 +671,7 @@
 
     function setDefaultDatabase() {
         var driver = document.getElementById('driver').value;
+        var mongoConnectionScheme = document.getElementById('mongo-connection-string-scheme');
         var host = document.getElementById('host');
         var port = document.getElementById('port');
         var database = document.getElementById('database');
@@ -665,7 +682,7 @@
         var collections = document.getElementById('collections-content');
 
         if (driver === 'mysql') {
-            host.value = '127.0.0.1';
+            host.value = 'localhost';
             port.value = '3306';
             database.value = 'destination_db';
             username.value = 'root';
@@ -674,8 +691,9 @@
             authSourceDatabase.value = '';
             table.style.display = 'block';
             collections.style.display = 'none';
+            mongoConnectionScheme.style.display = 'none';
         } else if (driver === 'pgsql') {
-            host.value = '127.0.0.1';
+            host.value = 'localhost';
             port.value = '5432';
             database.value = 'destination_db';
             username.value = 'postgres';
@@ -684,17 +702,41 @@
             authSourceDatabase.value = '';
             table.style.display = 'block';
             collections.style.display = 'none';
+            mongoConnectionScheme.style.display = 'none';
         } else if (driver === 'mongodb') {
-            host.value = '127.0.0.1';
+            host.value = 'localhost';
             port.value = '27017';
-            database.value = 'destination_db';
-            username.value = 'admin';
+            database.value = '';
+            username.value = '';
             password.value = '';
             authSourceDatabase.style.display = 'block';
             authSourceDatabase.value = '';
             table.style.display = 'none';
             collections.style.display = 'block';
+            mongoConnectionScheme.style.display = 'block';
         }
+    }
+
+    function toggleMongoConnectionStringScheme() {
+        var mongoConnectionScheme = document.getElementById('mongo-connection-scheme-mongodb');
+        var host = document.getElementById('host');
+        var port = document.getElementById('port');
+        var username = document.getElementById('username');
+        var password = document.getElementById('password');
+        var authSourceDatabase = document.getElementById('authSourceDatabase');
+        if (mongoConnectionScheme.checked) {
+            host.value = 'localhost';
+            host.setAttribute('placeholder', 'host');
+            port.value = '27017';
+            port.style.display = 'block';
+        } else {
+            host.value = '';
+            host.setAttribute('placeholder', 'hostname');
+            port.style.display = 'none';
+        }
+        username.value = '';
+        password.value = '';
+        authSourceDatabase.value = '';
     }
 
     function setTransformTable()
@@ -847,6 +889,7 @@
         var formData = new FormData(form);
         var authType = document.getElementById('auth-type').value;
         var authData = {};
+        var mongoConnectionScheme = document.getElementById('mongo-connection-scheme-mongodb');
     
         if (authType === 'basic') {
             authData = {
@@ -866,6 +909,7 @@
         
         // Menambahkan auth_data ke FormData
         formData.append('auth_data', JSON.stringify(authData));
+        formData.append('mongo_connection_string_scheme', (mongoConnectionScheme.checked ? 'mongodb' : 'mongodb+srv'));
 
         $.ajax({
             url: "{{ route('migration.create') }}",

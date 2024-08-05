@@ -68,6 +68,7 @@ class MigrationController extends Controller
                 'options'  => [
                     'database' => $settings['authSourceDatabase'] ?? '',
                 ],
+                'mongo_connection_string_scheme' => $settings['mongo_connection_string_scheme'] ?? '',
             ];
 
             DB::transaction(function () use ($settings, $setup_connection, &$migration) {

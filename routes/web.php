@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Main Features Router
-Route::get('/', [HomeController::class, 'index']);
+Route::redirect('/', '/migration/list');
 Route::prefix('/migration')->group(function () {
     Route::get('/', [MigrationController::class, 'index']);
     Route::post('/create', [MigrationController::class, 'createMigration'])->name('migration.create');
